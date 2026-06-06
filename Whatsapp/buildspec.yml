@@ -1,0 +1,50 @@
+{
+  "version": 0.2,
+  "env": {
+    "variables": {
+      "NODE_ENV": "production"
+    }
+  },
+  "phases": {
+    "install": {
+      "runtime-versions": {
+        "nodejs": "18"
+      },
+      "commands": [
+        "echo '=== Installing Dependencies ==='",
+        "npm install --production"
+      ]
+    },
+    "pre_build": {
+      "commands": [
+        "echo '=== Pre-build validation ==='",
+        "node -e \"require('./server.js')\" 2>&1 | head -5 || true"
+      ]
+    },
+    "build": {
+      "commands": [
+        "echo '=== Creating Lambda Deployment Package ==='",
+        "zip -r backend-lambda.zip server.js send-whatsapp.js backend/lambda.js backend/package.json node_modules -x '*.git*' -x '*/test/*' -x '*/tests/*' -x '*/spec/*' -x '*.md'",
+        "echo 'Lambda package size:'",
+        "ls -lh backend-lambda.zip"
+      ]
+    },
+    "post_build": {
+      "commands": [
+        "echo '=== Build Complete ==='",
+        "echo 'Upload backend-lambda.zip to AWS Lambda Console'"
+      ]
+    }
+  },
+  "artifacts": {
+    "files": [
+      "backend-lambda.zip"
+    ],
+    "discard-paths": "yes"
+  },
+  "cache": {
+    "paths": [
+      "node_modules/**/*"
+    ]
+  }
+}

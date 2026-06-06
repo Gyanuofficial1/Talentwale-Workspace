@@ -1,0 +1,5 @@
+node_modules/
+Tw_data/
+*.zip
+.env
+.DS_Store

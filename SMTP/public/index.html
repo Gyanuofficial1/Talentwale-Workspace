@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynamic Mail Dashboard</title>
+  <style>
+    :root {
+      --bg: #f3f7ff;
+      --card: #ffffff;
+      --text: #102a43;
+      --muted: #486581;
+      --brand: #0b7285;
+      --accent: #f59f00;
+      --border: #d9e2ec;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, #d5f5f6 0%, transparent 30%),
+        radial-gradient(circle at 90% 20%, #ffe8cc 0%, transparent 25%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(16, 42, 67, 0.08);
+    }
+
+    h1 { margin-top: 0; }
+    p { color: var(--muted); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+
+    textarea { min-height: 120px; resize: vertical; }
+
+    button {
+      background: linear-gradient(135deg, var(--brand), #1098ad);
+      border: 0;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #f59f00, #ffbf69);
+      color: #1f2937;
+    }
+
+    .hint {
+      background: #f8fbff;
+      border: 1px dashed #c7d3e0;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+      max-height: 280px;
+      overflow: auto;
+      font-size: 12px;
+    }
+
+    .keys {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 16px;
+    }
+
+    .key-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Dynamic Mail Dashboard</h1>
+    <p>Excel upload karo ya Google Sheet URL do, phir template ke basis par personalized mail bhejo.</p>
+
+    <form id="mailForm" class="grid">
+      <div>
+        <label>Excel File (.xlsx / .csv)</label>
+        <input type="file" name="excelFile" accept=".xlsx,.xls,.csv" />
+      </div>
+
+      <div>
+        <label>Google Sheet URL (public)</label>
+        <input type="text" name="googleSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/..." />
+      </div>
+
+      <div>
+        <label>Email Column Name</label>
+        <input type="text" name="toField" value="email" required />
+      </div>
+
+      <div>
+        <label>Subject Template</label>
+        <input type="text" name="subjectTemplate" value="Hello {{name}}" required />
+      </div>
+
+      <div>
+        <label>Mail Format</label>
+        <select name="mailFormat" id="mailFormat">
+          <option value="text">Plain Text</option>
+          <option value="html">HTML</option>
+        </select>
+      </div>
+
+      <div class="full">
+        <label id="templateLabel">Plain Text Template</label>
+        <textarea name="textTemplate" id="textTemplate">Hi {{name}},
+
+Your interview is scheduled on {{date}} at {{time}}.
+
+Regards,
+Team</textarea>
+        <textarea name="htmlTemplate" id="htmlTemplate" class="hidden"><p>Hi {{name}},</p><p>Your interview is scheduled on {{date}} at {{time}}.</p><p>Regards,<br/>Team</p></textarea>
+      </div>
+
+      <div class="full hint">
+        Placeholders format: <code>{{columnName}}</code>.<br />
+        Example columns in sheet: <code>name,email,date,time</code>
+      </div>
+
+      <div class="full btn-row">
+        <button type="button" id="previewBtn" class="btn-secondary">Preview Sheet</button>
+        <button type="submit">Send Dynamic Emails</button>
+      </div>
+    </form>
+
+    <h3>Parsed Keys (click to copy)</h3>
+    <div id="keysBox" class="keys"></div>
+
+    <h3>Response</h3>
+    <pre id="result">Waiting...</pre>
+  </div>
+
+  <script>
+    const form = document.getElementById('mailForm');
+    const resultBox = document.getElementById('result');
+    const previewBtn = document.getElementById('previewBtn');
+    const keysBox = document.getElementById('keysBox');
+    const mailFormat = document.getElementById('mailFormat');
+    const textTemplate = document.getElementById('textTemplate');
+    const htmlTemplate = document.getElementById('htmlTemplate');
+    const templateLabel = document.getElementById('templateLabel');
+
+    function syncTemplateMode() {
+      const isText = mailFormat.value === 'text';
+      textTemplate.classList.toggle('hidden', !isText);
+      htmlTemplate.classList.toggle('hidden', isText);
+      templateLabel.textContent = isText ? 'Plain Text Template' : 'HTML Template';
+    }
+
+    function renderKeys(keys) {
+      keysBox.innerHTML = '';
+      if (!keys || !keys.length) {
+        keysBox.textContent = 'No keys found yet.';
+        return;
+      }
+
+      keys.forEach((key) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'key-btn';
+        btn.textContent = key;
+        btn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(key);
+            btn.textContent = `${key} copied`;
+            setTimeout(() => {
+              btn.textContent = key;
+            }, 900);
+          } catch (error) {
+            resultBox.textContent = JSON.stringify({ ok: false, error: 'Clipboard access denied' }, null, 2);
+          }
+        });
+        keysBox.appendChild(btn);
+      });
+    }
+
+    async function hitApi(path, loadingText) {
+      resultBox.textContent = loadingText;
+      const formData = new FormData(form);
+      const response = await fetch(path, { method: 'POST', body: formData });
+      const data = await response.json();
+      resultBox.textContent = JSON.stringify(data, null, 2);
+      return data;
+    }
+
+    previewBtn.addEventListener('click', async () => {
+      try {
+        const data = await hitApi('/api/preview', 'Parsing sheet...');
+        renderKeys(data.keys || []);
+      } catch (error) {
+        resultBox.textContent = JSON.stringify({ ok: false, error: error.message }, null, 2);
+      }
+    });
+
+    mailFormat.addEventListener('change', syncTemplateMode);
+    syncTemplateMode();
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      try {
+        await hitApi('/api/send', 'Sending...');
+      } catch (error) {
+        resultBox.textContent = JSON.stringify({ ok: false, error: error.message }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>

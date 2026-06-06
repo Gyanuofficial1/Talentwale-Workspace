@@ -1,0 +1,9 @@
+﻿SMTP_HOST=smtp.zeptomail.in
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=emailapikey
+SMTP_PASS=PHtE6r0ERbrigmAn90UD5v/sEpKsN9so9LkxJQlCstwUC/YHGU0G+Ngvl2O2r0gsAPkTFv+cnII5ubmetr+EJ2vrN2xMDmqyqK3sx/VYSPOZsbq6x00btFwdcEzaUoTrdN9r1C3WvNjcNA==
+MAIL_FROM=noreply@talentwale.co.in
+MAIL_TO=gyanu.talentwale@gmail.com
+MAIL_SUBJECT=Test email from SMTP project
+MAIL_TEXT=Hello from SMTP project

@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Backend Service
+  backend:
+    build: ./backend
+    container_name: talentwale-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://postgres:password@db:5432/talentwale
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - db
+    networks:
+      - talentwale-network
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: talentwale-db
+    environment:
+      - POSTGRES_DB=talentwale
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - talentwale-network
+
+  # Frontend Service (local development)
+  frontend:
+    image: node:18-alpine
+    container_name: talentwale-frontend
+    working_dir: /app
+    command: npx http-server ./src -p 3001
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3001:3001"
+    networks:
+      - talentwale-network
+
+volumes:
+  postgres_data:
+
+networks:
+  talentwale-network:
+    driver: bridge

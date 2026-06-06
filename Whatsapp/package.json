@@ -1,0 +1,27 @@
+{
+  "name": "azure-whatsapp-templates",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Send approved Azure WhatsApp templates.",
+  "main": "send-whatsapp.js",
+  "scripts": {
+    "start": "node server.js",
+    "ui": "node server.js",
+    "build": "node scripts/build.js",
+    "start:prod": "node dist/server.js",
+    "send": "node send-whatsapp.js",
+    "send:verify": "node send-whatsapp.js verify",
+    "send:tw-test": "node send-whatsapp.js tw_test",
+    "send:job-sug": "node send-whatsapp.js tw_job_sug"
+  },
+  "dependencies": {
+    "@azure-rest/communication-messages": "^1.0.0",
+    "@azure/storage-queue": "^12.29.0",
+    "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.15",
+    "pg": "^8.13.1",
+    "production": "^0.0.2",
+    "serverless-http": "^4.0.0",
+    "xlsx": "^0.18.5"
+  }
+}

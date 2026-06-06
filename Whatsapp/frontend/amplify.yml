@@ -1,0 +1,35 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "=== TalentWale Frontend Build ==="
+        - echo "API URL = $API_BASE_URL"
+    build:
+      commands:
+        # Build folder mein frontend files copy karo
+        - mkdir -p build
+        - cp -r src/* build/
+        - cp -r public/* build/ 2>/dev/null || true
+
+        # API Gateway URL ko index.html mein inject karo
+        # AWS Amplify Console mein API_BASE_URL environment variable set karein
+        - |
+          if [ -n "$API_BASE_URL" ]; then
+            echo "Injecting API URL: $API_BASE_URL"
+            sed -i "s|__AMPLIFY_API_URL__|$API_BASE_URL|g" build/index.html
+          else
+            echo "WARNING: API_BASE_URL not set. Using relative URLs (local dev mode)."
+            sed -i "s|__AMPLIFY_API_URL__||g" build/index.html
+          fi
+    postBuild:
+      commands:
+        - echo "=== Build Complete ==="
+        - ls -la build/
+  artifacts:
+    # Amplify yeh folder serve karega
+    baseDirectory: build
+    files:
+      - '**/*'
+  cache:
+    paths: []

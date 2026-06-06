@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Talentwale WhatsApp Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css" />
+    <!-- AWS Amplify: API Gateway URL yahan inject hoga (amplify.yml mein sed se) -->
+    <script>
+      window.__API_CONFIG__ = {
+        apiUrl: "__AMPLIFY_API_URL__"
+      };
+    </script>
+  </head>
+  <body>
+    <div class="app-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <img src="/dual_layer.svg" alt="Talentwale icon" class="logo" />
+          <h2>Talentwale</h2>
+        </div>
+        <nav class="sidebar-nav">
+          <button type="button" class="nav-item active view-tab" data-view="quick">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span>Quick Send</span>
+          </button>
+          <button type="button" class="nav-item view-tab" data-view="bulk">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"></path></svg>
+            <span>Bulk Send</span>
+          </button>
+          <button type="button" class="nav-item view-tab" data-view="smtp">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l9 6 9-6M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <span>Email Campaign</span>
+          </button>
+          <button type="button" class="nav-item view-tab" data-view="analytics">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M7 14l3-3 3 2 4-5"></path></svg>
+            <span>Email Analytics</span>
+          </button>
+          <button type="button" class="nav-item view-tab" data-view="config">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.983 5.5a1.5 1.5 0 013 0v.173a1.5 1.5 0 001.02 1.423l.164.055a1.5 1.5 0 001.66-.499l.122-.161a1.5 1.5 0 012.378 1.837l-.106.174a1.5 1.5 0 00.147 1.73l.12.14a1.5 1.5 0 010 1.965l-.12.14a1.5 1.5 0 00-.147 1.73l.106.174a1.5 1.5 0 01-2.378 1.837l-.122-.161a1.5 1.5 0 00-1.66-.499l-.164.055a1.5 1.5 0 00-1.02 1.423v.173a1.5 1.5 0 01-3 0v-.173a1.5 1.5 0 00-1.02-1.423l-.164-.055a1.5 1.5 0 00-1.66.499l-.122.161a1.5 1.5 0 01-2.378-1.837l.106-.174a1.5 1.5 0 00-.147-1.73l-.12-.14a1.5 1.5 0 010-1.965l.12-.14a1.5 1.5 0 00.147-1.73l-.106-.174a1.5 1.5 0 012.378-1.837l.122.161a1.5 1.5 0 001.66.499l.164-.055a1.5 1.5 0 001.02-1.423V5.5z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path></svg>
+            <span>Config Center</span>
+          </button>
+          <button type="button" class="nav-item view-tab" data-view="chat">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+            <span>Chat Inbox</span>
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span id="statusBadge" class="badge">Ready</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+          <h1 id="pageTitle">Quick Send</h1>
+          <div class="header-actions">
+             <button type="button" id="downloadReportButton" class="btn-outline">Export Report</button>
+          </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-body">
+          <section id="dashboardView" class="app-view active">
+            <!-- Stats -->
+            <div class="stats-row" id="dashboardStatsRow">
+              <div class="stat-card">
+                <span class="stat-label" id="contactCountLabel">Contacts</span>
+                <span class="stat-value" id="contactCount">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label" id="reportPendingLabel">Pending Ack</span>
+                <span class="stat-value text-warning" id="reportPendingCount">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label" id="reportSentLabel">Total Sent</span>
+                <span class="stat-value text-primary" id="reportSentCount">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label" id="reportDeliveredLabel">Delivered</span>
+                <span class="stat-value text-success" id="reportDeliveredCount">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label" id="reportFailedLabel">Failed</span>
+                <span class="stat-value text-danger" id="reportFailedCount">0</span>
+              </div>
+            </div>
+
+            <!-- Grid Layout -->
+            <div class="dashboard-grid">
+              <div class="main-column">
+                <!-- Quick Send -->
+                <div class="card workflow-card quick-card" id="quickSendCard">
+                  <div class="card-header">
+                    <h2>Quick Send</h2>
+                    <p>Send a template to a single recipient</p>
+                  </div>
+                  <div class="card-body">
+                    <form id="sendForm" class="form">
+                      <div class="form-row">
+                        <div class="form-group flex-1">
+                          <label>Template</label>
+                          <div class="custom-select" id="templatePicker" data-open="false">
+                            <button type="button" id="templatePickerButton" class="custom-select-button">
+                              <span id="templatePickerValue" class="truncate">Select template</span>
+                              <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <div class="custom-select-menu" id="templatePickerMenu"></div>
+                          </div>
+                          <select id="templateName" name="templateName" class="hidden-select" required></select>
+                        </div>
+                        <div class="form-group flex-1">
+                          <label>Recipient Phone</label>
+                          <input type="text" id="recipientPhoneNumber" class="input" placeholder="919999999999" required />
+                        </div>
+                      </div>
+                      <div id="singleValueOverrides" class="mapping-list mt-3"></div>
+                      <div class="form-actions mt-4 pt-3 border-top">
+                        <button type="submit" id="sendButton" class="btn-primary">Send Message</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- Bulk Contacts Setup -->
+                <div class="card workflow-card bulk-card" id="bulkSendCard">
+                  <div class="card-header">
+                    <h2>Bulk Contacts Setup</h2>
+                    <p>Import audience and map columns for campaign</p>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-row">
+                      <div class="form-group flex-2">
+                        <label>Google Sheet URL</label>
+                        <div class="input-group">
+                          <input type="text" id="sheetUrl" class="input" placeholder="https://docs.google.com/spreadsheets/d/...">
+                          <button type="button" id="loadSheetButton" class="btn-outline border-l-0 rounded-l-none">Parse Sheet</button>
+                        </div>
+                      </div>
+                      <div class="form-group flex-1">
+                        <label>Upload Excel/CSV</label>
+                        <input type="file" id="fileUpload" accept=".xlsx,.xls,.csv" class="file-input">
+                      </div>
+                    </div>
+                    <div class="form-group mt-4 pt-3 border-top">
+                      <label>Template</label>
+                      <select id="bulkTemplateName" class="input max-w-sm"></select>
+                    </div>
+                    <div class="form-group mt-4">
+                      <label>Phone Number Column</label>
+                      <select id="phoneColumn" class="input max-w-sm"></select>
+                    </div>
+                    <div id="valueMappings" class="mapping-list mt-3"></div>
+                    <div class="form-actions mt-4 pt-3 border-top">
+                      <button type="button" id="sendBulkButton" class="btn-primary btn-large">Launch Bulk Campaign</button>
+                      <button type="button" id="stopBulkButton" class="btn-outline btn-large">Stop Campaign</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card workflow-card smtp-card is-hidden" id="smtpBulkCard">
+                  <div class="card-header smtp-card-header">
+                    <h2>Email Campaign Studio</h2>
+                    <p>Fast bulk email workflow</p>
+                  </div>
+                  <div class="card-body smtp-workspace">
+                    <div class="smtp-live-strip" id="smtpLiveStrip">
+                      <div class="smtp-live-item">
+                        <span>Users</span>
+                        <strong id="smtpLiveLoaded">0</strong>
+                      </div>
+                      <div class="smtp-live-item">
+                        <span>Sent</span>
+                        <strong id="smtpLiveSent">0</strong>
+                      </div>
+                      <div class="smtp-live-item">
+                        <span>Failed</span>
+                        <strong id="smtpLiveFailed">0</strong>
+                      </div>
+                      <div class="smtp-live-item smtp-live-item-wide">
+                        <span>Status</span>
+                        <strong id="smtpLiveState">Idle</strong>
+                        <em id="smtpLiveUpdated">No updates yet</em>
+                      </div>
+                    </div>
+
+                    <div class="smtp-pane smtp-pane-source">
+                      <h3 class="smtp-pane-title">1. Audience Source</h3>
+                      <p class="smtp-pane-text">Load audience from Sheet or file.</p>
+
+                      <div class="smtp-source-compact">
+                        <div class="smtp-source-block smtp-source-sheet">
+                          <label for="smtpSheetUrl">Sheet URL</label>
+                          <div class="smtp-source-input-row">
+                            <input type="text" id="smtpSheetUrl" class="input" placeholder="https://docs.google.com/spreadsheets/d/...">
+                            <button type="button" id="loadSmtpSheetButton" class="btn-outline">Parse</button>
+                          </div>
+                        </div>
+
+                        <div class="smtp-source-or">OR</div>
+
+                        <div class="smtp-source-block smtp-source-upload">
+                          <label for="smtpAudienceUpload">Upload File</label>
+                          <input type="file" id="smtpAudienceUpload" accept=".xlsx,.xls,.csv" class="file-input smtp-file-input smtp-file-input-compact">
+                        </div>
+                      </div>
+
+                      <div class="smtp-source-row mt-2">
+                        <div class="smtp-source-column is-hidden" id="smtpRecipientColumnWrap">
+                          <label>Recipient Column</label>
+                          <select id="smtpRecipientColumn" class="input"></select>
+                          <small class="smtp-help">Email IDs wala column select karein.</small>
+                        </div>
+                      </div>
+
+                      <div class="form-group mt-2 is-hidden" id="smtpAudienceSheetWrap">
+                        <label>Sheet Name</label>
+                        <select id="smtpAudienceSheet" class="input"></select>
+                      </div>
+                    </div>
+
+                    <div class="smtp-pane smtp-pane-template">
+                      <h3 class="smtp-pane-title">2. Email Template</h3>
+                      <p class="smtp-pane-text">Use placeholders like {{name}} and {{role}}.</p>
+
+                      <div class="form-group mt-3">
+                        <label>Email Subject Template</label>
+                        <input type="text" id="smtpSubjectTemplate" class="input" placeholder="Hi {{name}}, opportunity update for {{role}}" />
+                      </div>
+
+                      <div class="form-group mt-3">
+                        <div class="smtp-body-head">
+                          <label>Email Body Template</label>
+                          <div class="smtp-body-tools">
+                            <label class="smtp-body-format-label" for="smtpBodyFormat">Format</label>
+                            <select id="smtpBodyFormat" class="input smtp-body-format-select">
+                              <option value="html">HTML</option>
+                              <option value="plain">Plain Text</option>
+                            </select>
+                            <button type="button" id="smtpPreviewButton" class="btn-outline">Preview</button>
+                          </div>
+                        </div>
+                        <textarea id="smtpBodyTemplate" class="smtp-template-area" placeholder="Hello {{name}},\n\nYour interview is scheduled on {{interviewDate}}."></textarea>
+                      </div>
+
+                      <div class="form-group mt-3">
+                        <label for="smtpSendRatePerMinute">Send Speed (emails/min)</label>
+                        <input
+                          type="number"
+                          id="smtpSendRatePerMinute"
+                          class="input"
+                          min="1"
+                          max="60000"
+                          step="1"
+                          placeholder="120"
+                        />
+                        <small class="smtp-help">Bulk campaign ke liye per-minute email rate set karein.</small>
+                      </div>
+                    </div>
+
+                    <div class="smtp-variable-wrap">
+                      <div id="smtpVariableTokens" class="smtp-variable-list"></div>
+                    </div>
+
+                    <div class="smtp-action-bar">
+                      <div class="form-actions">
+                        <button type="button" id="sendSmtpTestButton" class="btn-outline btn-large">Send Test</button>
+                        <button type="button" id="sendSmtpBulkButton" class="btn-primary btn-large">Send Campaign</button>
+                        <button type="button" id="stopSmtpBulkButton" class="btn-outline btn-large">Stop Campaign</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="side-column">
+                <!-- Delivery Report -->
+                <div class="card h-md flex-col" id="deliveryReportCard">
+                  <div class="card-header py-2 flex-between">
+                    <h3 class="text-sm">Recent Deliveries</h3>
+                  </div>
+                  <div class="card-body p-0 flex-1 overflow-auto report-table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Time</th>
+                          <th>Recipient</th>
+                          <th>Type</th>
+                          <th>Status</th>
+                          <th>Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody id="reportBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Preview -->
+                <div class="card h-xs flex-col mt-4" id="audiencePreviewCard">
+                  <div class="card-header py-2">
+                    <h3 class="text-sm">Audience Preview</h3>
+                  </div>
+                  <div class="card-body p-0 flex-1 overflow-auto">
+                    <table>
+                      <thead id="contactsHead"></thead>
+                      <tbody id="contactsBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="card h-xs flex-col mt-4 is-hidden" id="smtpPreviewCard">
+                  <div class="card-header py-2">
+                    <h3 class="text-sm">Email Data Preview</h3>
+                  </div>
+                  <div class="card-body p-0 flex-1 overflow-auto">
+                    <table>
+                      <thead id="smtpPreviewHead"></thead>
+                      <tbody id="smtpPreviewBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          <section id="analyticsView" class="app-view">
+            <div class="card" id="smtpAnalyticsCard">
+              <div class="card-header">
+                <h2>Email Engagement Analytics</h2>
+                <p>Track opens, clicks, top links, and recipient-level engagement.</p>
+              </div>
+              <div class="card-body smtp-analytics-wrap">
+                <div class="smtp-analytics-kpis">
+                  <div class="smtp-analytics-kpi">
+                    <span>Unique Opens</span>
+                    <strong id="smtpAnalyticsUniqueOpenCount">0</strong>
+                  </div>
+                  <div class="smtp-analytics-kpi">
+                    <span>Unique Clicks</span>
+                    <strong id="smtpAnalyticsUniqueClickCount">0</strong>
+                  </div>
+                  <div class="smtp-analytics-kpi">
+                    <span>Open Rate</span>
+                    <strong id="smtpAnalyticsOpenRate">0%</strong>
+                  </div>
+                  <div class="smtp-analytics-kpi">
+                    <span>Click Rate</span>
+                    <strong id="smtpAnalyticsClickRate">0%</strong>
+                  </div>
+                </div>
+
+                <div class="smtp-analytics-chart-toolbar">
+                  <label for="smtpAnalyticsRange">Timeline</label>
+                  <select id="smtpAnalyticsRange" class="input">
+                    <option value="today">Today (Hourly)</option>
+                    <option value="yesterday">Yesterday (Hourly)</option>
+                    <option value="7d">Last 7 Days</option>
+                    <option value="14d" selected>Last 14 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                  </select>
+                </div>
+                <div id="smtpAnalyticsChart" class="smtp-analytics-chart">
+                  <div class="smtp-analytics-empty">No engagement timeline yet.</div>
+                </div>
+                <p id="smtpAnalyticsMeta" class="smtp-analytics-meta">Waiting for campaign analytics...</p>
+
+                <div class="smtp-top-links-wrap">
+                  <h4>Top Clicked Links</h4>
+                  <ul id="smtpAnalyticsTopLinks" class="smtp-top-links-list"></ul>
+                </div>
+
+                <div class="smtp-recipient-report-wrap">
+                  <h4>Recipient Engagement</h4>
+                  <div class="smtp-recipient-report-table-wrap">
+                    <table class="smtp-recipient-report-table">
+                      <thead>
+                        <tr>
+                          <th>Recipient</th>
+                          <th>Sent</th>
+                          <th>Opens</th>
+                          <th>Clicks</th>
+                          <th>Open %</th>
+                          <th>Click %</th>
+                        </tr>
+                      </thead>
+                      <tbody id="smtpAnalyticsRecipientsBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="smtp-event-report-wrap">
+                  <div class="smtp-event-report-head">
+                    <div>
+                      <h4>Detailed Activity Feed</h4>
+                      <p id="smtpAnalyticsEventsMeta" class="smtp-event-report-meta">Latest opens and clicks will appear here.</p>
+                    </div>
+                    <button type="button" id="smtpAnalyticsLoadMoreButton" class="btn-outline" hidden>Load 10 More</button>
+                  </div>
+                  <div class="smtp-event-report-table-wrap">
+                    <table class="smtp-event-report-table">
+                      <thead>
+                        <tr>
+                          <th>Time</th>
+                          <th>Recipient</th>
+                          <th>Event</th>
+                          <th>Target Link</th>
+                          <th>Count</th>
+                        </tr>
+                      </thead>
+                      <tbody id="smtpAnalyticsEventsBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="configView" class="app-view">
+            <div class="config-grid-layout">
+              <div class="card config-card config-card-wide">
+                <div class="card-header">
+                  <h2>SMTP Configuration</h2>
+                  <p>Manage SMTP credentials, activation, and default provider from one place.</p>
+                </div>
+                <div class="card-body">
+                  <div class="config-manager-panel">
+                    <div class="config-manager-toolbar">
+                      <div class="config-toolbar-actions">
+                        <button type="button" id="openSmtpCredentialFormButton" class="btn-primary">Add Credential</button>
+                        <button type="button" id="smtpCredentialReloadButton" class="btn-text">Refresh</button>
+                      </div>
+                    </div>
+
+                    <div class="smtp-cred-list-wrap mt-2">
+                      <table class="smtp-cred-table">
+                        <thead>
+                          <tr>
+                            <th>Profile</th>
+                            <th>Provider</th>
+                            <th>Host</th>
+                            <th>Sender</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody id="smtpCredentialList"></tbody>
+                      </table>
+                    </div>
+
+                    <div id="smtpCredentialEditor" class="config-form-panel is-hidden mt-3">
+                      <div class="config-form-head">
+                        <h3 id="smtpCredentialEditorTitle" class="config-block-title">Add SMTP Credential</h3>
+                        <button type="button" id="closeSmtpCredentialFormButton" class="btn-text">Close</button>
+                      </div>
+                      <form id="smtpCredentialForm" class="smtp-cred-form">
+                        <div class="form-row mt-3">
+                          <div class="form-group">
+                            <label>Profile Name</label>
+                            <input type="text" id="smtpCredName" class="input" placeholder="SES Primary" required />
+                          </div>
+                          <div class="form-group">
+                            <label>Provider</label>
+                            <select id="smtpCredProvider" class="input">
+                              <option value="ses">SES</option>
+                              <option value="gmail">GMAIL</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                          <div class="form-group">
+                            <label>SMTP Host</label>
+                            <input type="text" id="smtpCredHost" class="input" placeholder="email-smtp.ap-south-1.amazonaws.com" required />
+                          </div>
+                          <div class="form-group">
+                            <label>Port</label>
+                            <input type="number" id="smtpCredPort" class="input" value="587" min="1" max="65535" required />
+                          </div>
+                          <div class="form-group smtp-cred-check">
+                            <label>
+                              <input type="checkbox" id="smtpCredSecure" />
+                              Secure (SSL/TLS)
+                            </label>
+                          </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                          <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" id="smtpCredUser" class="input" placeholder="SMTP username" required />
+                          </div>
+                          <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="smtpCredPass" class="input" placeholder="SMTP password" autocomplete="new-password" />
+                          </div>
+                        </div>
+
+                        <div class="form-row mt-3">
+                          <div class="form-group">
+                            <label>From Email</label>
+                            <input type="email" id="smtpCredFrom" class="input" placeholder="noreply@domain.com" required />
+                          </div>
+                          <div class="form-group">
+                            <label>From Name</label>
+                            <input type="text" id="smtpCredFromName" class="input" placeholder="Gyanu via Talentwale" maxlength="120" />
+                          </div>
+                        </div>
+
+                        <div class="form-actions mt-3">
+                          <label class="smtp-cred-check-inline">
+                            <input type="checkbox" id="smtpCredSetActive" checked />
+                            Set as active for provider
+                          </label>
+                          <button type="submit" id="smtpCredSaveButton" class="btn-primary">Save Credential</button>
+                          <button type="button" id="smtpCredResetButton" class="btn-outline">Reset</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="chatView" class="app-view h-full">
+            <div class="card h-full flex-row p-0 overflow-hidden chat-layout">
+              <!-- Inbox List -->
+              <aside class="inbox-sidebar flex-col">
+                <div class="inbox-header p-3 border-bottom bg-light">
+                  <div class="inbox-header-top flex-between">
+                    <h2 class="text-md m-0 font-semibold">Inbox</h2>
+                    <span class="badge badge-blue" id="chatCount">0</span>
+                  </div>
+                  <div class="inbox-search-wrap">
+                    <input
+                      type="text"
+                      id="chatSearchInput"
+                      class="inbox-search-input"
+                      placeholder="Search by number"
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+                <div id="inboxList" class="inbox-list flex-1 overflow-auto p-2"></div>
+              </aside>
+
+              <!-- Thread Panel -->
+              <div id="threadPanel" class="thread-panel flex-1 flex-col bg-white">
+                <div class="thread-header p-3 border-bottom flex-row align-center gap-3">
+                  <div class="avatar" id="threadAvatar">TW</div>
+                  <div class="thread-info">
+                    <h3 class="m-0 text-md font-semibold text-primary" id="threadTitle">Select a contact</h3>
+                    <p class="m-0 text-sm text-tertiary" id="threadSubtitle">Conversation details</p>
+                  </div>
+                </div>
+                <div id="threadMessages" class="thread-messages flex-1 overflow-auto p-4 bg-chat"></div>
+                <div class="thread-composer p-3 border-top bg-white">
+                  <form id="replyForm" class="reply-form">
+                    <div id="replyAttachmentPreview" class="attachment-preview mb-2" hidden></div>
+                    <div class="composer-input-row flex-row gap-2">
+                      <button type="button" id="attachButton" class="btn-icon" aria-label="Attach">
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                      </button>
+                      <input type="text" id="replyInput" class="composer-input flex-1" placeholder="Type a message..." autocomplete="off" />
+                      <button type="submit" id="replyButton" class="btn-primary btn-icon-round">
+                        <svg class="icon-sm" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                      </button>
+                    </div>
+                    <input id="replyFileInput" type="file" hidden accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+                  </form>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div id="smtpPreviewModal" class="smtp-preview-modal" aria-hidden="true">
+      <div class="smtp-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="smtpPreviewTitle">
+        <div class="smtp-preview-head">
+          <h3 id="smtpPreviewTitle">Email Preview</h3>
+          <button type="button" id="smtpPreviewCloseButton" class="btn-text">Close</button>
+        </div>
+        <div class="smtp-preview-meta" id="smtpPreviewMeta">Preview uses first parsed row.</div>
+        <div class="smtp-preview-subject-wrap">
+          <span class="smtp-preview-label">Subject</span>
+          <p id="smtpPreviewSubject" class="smtp-preview-subject">-</p>
+        </div>
+        <div class="smtp-preview-body-wrap">
+          <span class="smtp-preview-label">Body</span>
+          <div id="smtpMailPreviewBody" class="smtp-preview-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "talentwale-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TalentWale Frontend - Candidate Outreach UI",
+  "scripts": {
+    "start": "python -m http.server 3001",
+    "build": "echo 'Static frontend - no build step required'"
+  },
+  "keywords": [
+    "frontend",
+    "ui",
+    "recruitment"
+  ],
+  "author": "TalentWale",
+  "license": "ISC",
+  "devDependencies": {}
+}
