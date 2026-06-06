@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**'
-      - 'server.js'
-      - 'send-whatsapp.js'
-      - 'package.json'
+      - 'Whatsapp/backend/**'
+      - 'Whatsapp/server.js'
+      - 'Whatsapp/send-whatsapp.js'
+      - 'Whatsapp/package.json'
 
 jobs:
   deploy:
@@ -22,11 +22,10 @@ jobs:
         with:
           node-version: '18.x'
 
-      - name: Install Dependencies
-        run: npm install --production
-
-      - name: Create Zip Package
+      - name: Install Dependencies & Create Zip
         run: |
+          cd Whatsapp
+          npm install --production
           zip -r backend-lambda.zip server.js send-whatsapp.js backend/lambda.js backend/package.json node_modules
 
       - name: Deploy to AWS Lambda
@@ -34,6 +33,6 @@ jobs:
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ap-south-1  # Change this if your AWS region is different
-          function_name: talentwale-backend  # Change this to your Lambda function's exact name
-          zip_file: backend-lambda.zip
+          aws_region: ap-south-1
+          function_name: talentwale-backend
+          zip_file: Whatsapp/backend-lambda.zip
