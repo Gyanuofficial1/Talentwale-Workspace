@@ -9,6 +9,7 @@ on:
       - 'Whatsapp/server.js'
       - 'Whatsapp/send-whatsapp.js'
       - 'Whatsapp/package.json'
+      - 'Whatsapp/src/**'
 
 jobs:
   deploy:
@@ -26,7 +27,7 @@ jobs:
         run: |
           cd Whatsapp
           npm install --production
-          zip -r backend-lambda.zip server.js send-whatsapp.js backend/lambda.js backend/package.json node_modules
+          zip -r backend-lambda.zip server.js send-whatsapp.js backend/lambda.js backend/package.json src node_modules
 
       - name: Deploy to AWS Lambda
         uses: appleboy/lambda-action@v0.2.0
