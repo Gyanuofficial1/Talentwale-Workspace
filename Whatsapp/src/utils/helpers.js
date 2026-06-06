@@ -330,3 +330,37 @@ module.exports = {
   normalizeSmtpSendRatePerMinute,
   getSmtpSendDelayMs,
 };
+function getTemplates() {
+  const { TEMPLATE_KEYS, buildTemplateDefinition } = global;
+  return Object.keys(TEMPLATE_KEYS).map((name) => {
+    const template = buildTemplateDefinition(name);
+    return {
+      name,
+      label: name
+        .split("_")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" "),
+      language: template.language,
+      values: template.values.filter((value) => ["text", "quickAction"].includes(value.kind)),
+      bindings: template.bindings,
+    };
+  });
+}
+
+function getMissingTemplateValues(templateName, valueOverrides = {}) {
+  const { buildTemplateDefinition } = global;
+  const template = buildTemplateDefinition(templateName);
+  return template.values
+    .filter((value) => ["text", "quickAction", "image", "document", "video"].includes(value.kind))
+    .map((value) => value.name)
+    .filter((name) => {
+      const templateValue = template.values.find((value) => value.name === name);
+      const override = String(valueOverrides[name] ?? "").trim();
+      const existingUrl = String(templateValue?.url || "").trim();
+      const existingText = String(templateValue?.text || "").trim();
+      return !override && !existingUrl && !existingText;
+    });
+}
+
+module.exports.getTemplates = getTemplates;
+module.exports.getMissingTemplateValues = getMissingTemplateValues;
