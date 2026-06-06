@@ -23,6 +23,7 @@ loadToGlobal(requestHelpers);
 
 const staticServer = require("./src/utils/staticServer");
 loadToGlobal(staticServer);
+loadToGlobal(require("./send-whatsapp"));
 
 const database = require("./src/config/database");
 loadToGlobal(database);
