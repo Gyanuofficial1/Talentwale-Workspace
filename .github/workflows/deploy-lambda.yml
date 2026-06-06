@@ -1,0 +1,39 @@
+name: Deploy Backend to AWS Lambda
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'server.js'
+      - 'send-whatsapp.js'
+      - 'package.json'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - name: Install Dependencies
+        run: npm install --production
+
+      - name: Create Zip Package
+        run: |
+          zip -r backend-lambda.zip server.js send-whatsapp.js backend/lambda.js backend/package.json node_modules
+
+      - name: Deploy to AWS Lambda
+        uses: appleboy/lambda-action@v0.2.0
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ap-south-1  # Change this if your AWS region is different
+          function_name: talentwale-backend  # Change this to your Lambda function's exact name
+          zip_file: backend-lambda.zip
