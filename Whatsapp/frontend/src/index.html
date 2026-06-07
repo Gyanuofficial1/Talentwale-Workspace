@@ -16,7 +16,23 @@
     </script>
   </head>
   <body>
-    <div class="app-layout">
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="login-overlay is-hidden">
+      <div class="login-modal">
+        <img src="/dual_layer.svg" alt="Talentwale icon" class="login-logo" />
+        <h2>Welcome to Talentwale</h2>
+        <p>Please enter the secure dashboard password.</p>
+        <form id="loginForm" class="login-form">
+          <div class="form-group">
+            <input type="password" id="loginPassword" class="input login-input" placeholder="Enter Password" required autocomplete="current-password" />
+          </div>
+          <button type="submit" id="loginSubmitBtn" class="btn-primary login-btn">Access Dashboard</button>
+        </form>
+        <p id="loginError" class="login-error text-danger mt-2 text-sm text-center is-hidden">Invalid password. Please try again.</p>
+      </div>
+    </div>
+
+    <div class="app-layout" id="mainAppLayout" style="display: none;">
       <!-- Sidebar -->
       <aside class="sidebar">
         <div class="sidebar-header">

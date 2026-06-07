@@ -6,7 +6,8 @@
 const path = require("path");
 
 const PORT = Number(process.env.PORT || 3000);
-const PUBLIC_DIR = path.join(__dirname, "..", "..", "public");
+const PUBLIC_DIR = path.join(__dirname, "..", "..", "frontend", "src");
+const PUBLIC_ASSETS_DIR = path.join(__dirname, "..", "..", "frontend", "public");
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads");
 const MAX_UPLOAD_SIZE_BYTES = 20 * 1024 * 1024;
 const BULK_SEND_RATE_PER_SECOND = Math.max(1, Number(process.env.BULK_SEND_RATE_PER_SECOND || 3));
@@ -119,6 +120,8 @@ const EMAIL_TRACKING_TOKEN_SECRET = String(
 ).trim();
 const DEFAULT_UNSUBSCRIBE_TOKEN_SECRET = "local-unsubscribe-secret-change-me";
 const DEFAULT_EMAIL_TRACKING_TOKEN_SECRET = "local-email-tracking-secret-change-me";
+const DASHBOARD_PASSWORD = String(process.env.DASHBOARD_PASSWORD || "admin123").trim();
+const JWT_SECRET = String(process.env.JWT_SECRET || "default-jwt-secret-change-me").trim();
 
 const CONTENT_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -213,4 +216,7 @@ module.exports = {
   BLOCKED_DISPOSABLE_DOMAINS,
   EMAIL_VERIFY_MODES_WITH_MX,
   EMAIL_VERIFY_MODES_WITH_SMTP_PROBE,
+  DASHBOARD_PASSWORD,
+  JWT_SECRET,
+  PUBLIC_ASSETS_DIR,
 };

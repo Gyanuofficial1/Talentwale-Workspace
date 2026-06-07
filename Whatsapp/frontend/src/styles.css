@@ -2218,3 +2218,81 @@ tbody tr:hover {
     text-align: center;
   }
 }
+
+/* Login Overlay Styles */
+.login-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-body);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+
+.login-overlay.is-hidden {
+  display: none !important;
+}
+
+.login-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 3rem 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.login-logo {
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.login-modal h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.login-modal p {
+  color: var(--text-tertiary);
+  font-size: 0.9375rem;
+  margin-bottom: 2rem;
+}
+
+.login-form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.login-input {
+  width: 100%;
+  height: 3rem;
+  font-size: 1rem;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.login-btn {
+  width: 100%;
+  height: 3rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.login-error {
+  color: var(--danger);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  font-weight: 500;
+}

@@ -7,25 +7,48 @@
     ? String(window.__API_CONFIG__.apiUrl).replace(/\/$/, "")
     : "";
 
-  if (!API_BASE_URL) return; // Local dev — koi change nahi
+  window.__API_BASE_URL__ = API_BASE_URL;
 
-  // fetch() patch — /api/* calls ko API Gateway URL pe redirect karo
+  // fetch() patch
   const _originalFetch = window.fetch.bind(window);
-  window.fetch = function (url, ...args) {
-    if (typeof url === "string" && url.startsWith("/")) {
-      url = API_BASE_URL + url;
+  window.fetch = async function (url, ...args) {
+    let requestUrl = url;
+    if (typeof url === "string" && url.startsWith("/") && API_BASE_URL) {
+      requestUrl = API_BASE_URL + url;
     }
-    return _originalFetch(url, ...args);
+
+    const token = localStorage.getItem("dashboard_token");
+    if (token && typeof url === "string" && url.startsWith("/api/")) {
+      const options = args[0] || {};
+      options.headers = options.headers || {};
+      if (options.headers instanceof Headers) {
+        options.headers.set("Authorization", `Bearer ${token}`);
+      } else {
+        options.headers["Authorization"] = `Bearer ${token}`;
+      }
+      args[0] = options;
+    }
+
+    const response = await _originalFetch(requestUrl, ...args);
+    if (response.status === 401 && typeof url === "string" && !url.includes("/api/login")) {
+      localStorage.removeItem("dashboard_token");
+      const overlay = document.getElementById("loginOverlay");
+      const mainApp = document.getElementById("mainAppLayout");
+      if (overlay) overlay.classList.remove("is-hidden");
+      if (mainApp) mainApp.style.display = "none";
+    }
+    return response;
   };
 
-  // EventSource patch — SSE /api/inbox/stream ke liye
+  // EventSource patch
   if (typeof window.EventSource !== "undefined") {
     const _OriginalEventSource = window.EventSource;
     window.EventSource = function (url, options) {
-      if (typeof url === "string" && url.startsWith("/")) {
-        url = API_BASE_URL + url;
+      let requestUrl = url;
+      if (typeof url === "string" && url.startsWith("/") && API_BASE_URL) {
+        requestUrl = API_BASE_URL + url;
       }
-      return new _OriginalEventSource(url, options);
+      return new _OriginalEventSource(requestUrl, options);
     };
     window.EventSource.prototype = _OriginalEventSource.prototype;
     window.EventSource.CONNECTING = _OriginalEventSource.CONNECTING;
@@ -33,6 +56,67 @@
     window.EventSource.CLOSED = _OriginalEventSource.CLOSED;
   }
 })();
+
+// Initialize Auth Flow
+document.addEventListener("DOMContentLoaded", () => {
+  const loginOverlay = document.getElementById("loginOverlay");
+  const mainAppLayout = document.getElementById("mainAppLayout");
+  const loginForm = document.getElementById("loginForm");
+  const loginPassword = document.getElementById("loginPassword");
+  const loginError = document.getElementById("loginError");
+  const loginSubmitBtn = document.getElementById("loginSubmitBtn");
+
+  function checkAuth() {
+    const token = localStorage.getItem("dashboard_token");
+    if (!token) {
+      loginOverlay.classList.remove("is-hidden");
+      mainAppLayout.style.display = "none";
+    } else {
+      loginOverlay.classList.add("is-hidden");
+      mainAppLayout.style.display = "flex";
+    }
+  }
+
+  if (loginOverlay) {
+    checkAuth();
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loginError.classList.add("is-hidden");
+      const originalText = loginSubmitBtn.textContent;
+      loginSubmitBtn.textContent = "Verifying...";
+      loginSubmitBtn.disabled = true;
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: loginPassword.value })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          localStorage.setItem("dashboard_token", data.token);
+          loginOverlay.classList.add("is-hidden");
+          mainAppLayout.style.display = "flex";
+          loginPassword.value = "";
+          
+          if (typeof window.loadDashboardSummary === 'function') {
+            window.loadDashboardSummary();
+          }
+        } else {
+          loginError.textContent = data.error || "Invalid password. Please try again.";
+          loginError.classList.remove("is-hidden");
+        }
+      } catch (err) {
+        loginError.textContent = "Connection error. Please try again.";
+        loginError.classList.remove("is-hidden");
+      } finally {
+        loginSubmitBtn.textContent = originalText;
+        loginSubmitBtn.disabled = false;
+      }
+    });
+  }
+});
 // ─────────────────────────────────────────────────────────────────────────────
 
 const form = document.querySelector("#sendForm");

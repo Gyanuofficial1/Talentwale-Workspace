@@ -19,10 +19,32 @@ const nodemailer = require("nodemailer");
 const net = require("net");
 const dns = require("dns").promises;
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+const { requireAuth } = require("../middleware/authMiddleware");
 
 
 async function handleApi(req, res) {
   const routePath = String(req.url || "").split("?")[0];
+
+  if (req.method === "POST" && routePath === "/api/login") {
+    try {
+      const rawBody = await readRequestBody(req);
+      const payload = rawBody ? JSON.parse(rawBody) : {};
+      const { password } = payload;
+      if (password === DASHBOARD_PASSWORD) {
+        const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
+        sendJson(res, 200, { ok: true, token });
+      } else {
+        sendJson(res, 401, { error: "Invalid password" });
+      }
+    } catch (error) {
+      sendJson(res, 500, { error: "Login failed" });
+    }
+    return true;
+  }
+
+  const isAuth = requireAuth(req, res);
+  if (!isAuth) return true;
 
   if (req.method === "GET" && routePath === EMAIL_TRACKING_OPEN_ROUTE_PATH) {
     const parsedUrl = new URL(req.url, "http://localhost");
@@ -108,6 +130,69 @@ async function handleApi(req, res) {
         "Cache-Control": "no-store, no-cache, must-revalidate, private, max-age=0",
       });
       res.end(error.message || "Invalid tracking link.");
+    }
+    return true;
+  }
+
+  if (req.method === "GET" && routePath === UNSUBSCRIBE_ROUTE_PATH) {
+    const parsedUrl = new URL(req.url, "http://localhost");
+    const token = String(parsedUrl.searchParams.get("token") || "").trim();
+
+    try {
+      if (!token) throw new Error("Missing token.");
+      const payload = cryptoUtils.parseUnsubscribeToken(token);
+      await markRecipientUnsubscribed(payload.recipient, {
+        campaignId: payload.campaignId,
+        tokenHash: payload.tokenHash,
+        source: "footer_link"
+      });
+      res.writeHead(200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, must-revalidate, private, max-age=0"
+      });
+      res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Unsubscribed</title>
+          <style>
+            body { font-family: system-ui, sans-serif; text-align: center; padding: 50px; background: #f3f4f6; color: #1f2937; }
+            .box { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+            h2 { color: #16a34a; }
+          </style>
+        </head>
+        <body>
+          <div class="box">
+            <h2>Successfully Unsubscribed</h2>
+            <p>You have been removed from our mailing list and will no longer receive these emails.</p>
+          </div>
+        </body>
+        </html>
+      `);
+    } catch (error) {
+      res.writeHead(400, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, must-revalidate, private, max-age=0"
+      });
+      res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Unsubscribe Error</title>
+          <style>
+            body { font-family: system-ui, sans-serif; text-align: center; padding: 50px; background: #f3f4f6; color: #1f2937; }
+            .box { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+            h2 { color: #dc2626; }
+          </style>
+        </head>
+        <body>
+          <div class="box">
+            <h2>Error</h2>
+            <p>${error.message || "Invalid or expired unsubscribe link."}</p>
+          </div>
+        </body>
+        </html>
+      `);
     }
     return true;
   }

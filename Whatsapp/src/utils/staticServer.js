@@ -5,7 +5,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { PUBLIC_DIR, UPLOAD_DIR, CONTENT_TYPES } = require("../config/constants");
+const { PUBLIC_DIR, PUBLIC_ASSETS_DIR, UPLOAD_DIR, CONTENT_TYPES } = require("../config/constants");
 const { getExt, getMimeTypeFromExt, ensureUploadDir } = require("./helpers");
 
 function serveUpload(req, res) {
@@ -43,9 +43,16 @@ function serveUpload(req, res) {
 function serveStatic(req, res) {
   const requestPath = req.url === "/" ? "/index.html" : decodeURIComponent(req.url.split("?")[0]);
   const safePath = path.normalize(requestPath).replace(/^(\.\.[\\/])+/, "");
-  const filePath = path.join(PUBLIC_DIR, safePath);
+  let filePath = path.join(PUBLIC_DIR, safePath);
 
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  if (!fs.existsSync(filePath)) {
+    const assetPath = path.join(PUBLIC_ASSETS_DIR, safePath);
+    if (fs.existsSync(assetPath)) {
+      filePath = assetPath;
+    }
+  }
+
+  if (!filePath.startsWith(PUBLIC_DIR) && !filePath.startsWith(PUBLIC_ASSETS_DIR)) {
     res.writeHead(403);
     res.end("Forbidden");
     return;
