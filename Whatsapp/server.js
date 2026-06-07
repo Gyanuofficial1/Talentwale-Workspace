@@ -54,7 +54,11 @@ const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key");
   if (req.method === "OPTIONS") {
-    res.writeHead(204);
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization, x-api-key"
+    });
     res.end();
     return;
   }
