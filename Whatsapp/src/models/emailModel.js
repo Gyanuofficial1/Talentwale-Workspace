@@ -22,47 +22,13 @@ const crypto = require("crypto");
 
 
 async function loadEmailUnsubscribesFromDb() {
-  ensureDbAvailable();
-
-  try {
-    const result = await dbPool.query(`
-      SELECT email
-      FROM email_unsubscribes
-    `);
-
-    unsubscribedEmailRecipients.clear();
-    for (const row of Array.isArray(result.rows) ? result.rows : []) {
-      const email = normalizeEmail(row.email);
-      if (email) {
-        unsubscribedEmailRecipients.add(email);
-      }
-    }
-    console.log(`Loaded ${unsubscribedEmailRecipients.size} unsubscribed recipients from Supabase DB.`);
-  } catch (error) {
-    console.error("Failed to load email unsubscribes from Supabase DB.", error.message || error);
-  }
+  unsubscribedEmailRecipients.clear();
+  console.log("Email unsubscribes are now dynamically loaded on demand.");
 }
 
 async function loadEmailSuppressionsFromDb() {
-  ensureDbAvailable();
-
-  try {
-    const result = await dbPool.query(`
-      SELECT email
-      FROM email_suppressions
-    `);
-
-    suppressedEmailRecipients.clear();
-    for (const row of Array.isArray(result.rows) ? result.rows : []) {
-      const email = normalizeEmail(row.email);
-      if (email) {
-        suppressedEmailRecipients.add(email);
-      }
-    }
-    console.log(`Loaded ${suppressedEmailRecipients.size} suppressed recipients from Supabase DB.`);
-  } catch (error) {
-    console.error("Failed to load email suppressions from Supabase DB.", error.message || error);
-  }
+  suppressedEmailRecipients.clear();
+  console.log("Email suppressions are now dynamically loaded on demand.");
 }
 
 async function upsertEmailSuppression(email, options = {}) {
@@ -211,9 +177,70 @@ async function getEmailRejectionList(options = {}) {
   };
 }
 
-function isEmailUnsubscribed(email) {
+async function isEmailUnsubscribed(email) {
   const normalized = normalizeEmail(email);
-  return Boolean(normalized && unsubscribedEmailRecipients.has(normalized));
+  if (!normalized) {
+    return false;
+  }
+  if (unsubscribedEmailRecipients.has(normalized)) {
+    return true;
+  }
+
+  if (!dbPool) {
+    return false;
+  }
+
+  try {
+    const result = await dbPool.query(
+      `SELECT 1 FROM email_unsubscribes WHERE email = $1 LIMIT 1`,
+      [normalized]
+    );
+    if (result.rows && result.rows.length > 0) {
+      unsubscribedEmailRecipients.add(normalized);
+      return true;
+    }
+  } catch (error) {
+    console.error("Failed to check email unsubscribe status.", error.message || error);
+  }
+  return false;
+}
+
+async function isEmailSuppressed(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) {
+    return false;
+  }
+  if (suppressedEmailRecipients.has(normalized)) {
+    return true;
+  }
+
+  if (!dbPool) {
+    return false;
+  }
+
+  try {
+    const result = await dbPool.query(
+      `SELECT 1 FROM email_suppressions WHERE email = $1 LIMIT 1`,
+      [normalized]
+    );
+    if (result.rows && result.rows.length > 0) {
+      suppressedEmailRecipients.add(normalized);
+      return true;
+    }
+  } catch (error) {
+    console.error("Failed to check email suppression status.", error.message || error);
+  }
+  return false;
+}
+
+async function getSuppressedCount() {
+  if (!dbPool) return suppressedEmailRecipients.size;
+  try {
+    const result = await dbPool.query('SELECT COUNT(*)::int AS count FROM email_suppressions');
+    return result.rows[0].count;
+  } catch (e) {
+    return suppressedEmailRecipients.size;
+  }
 }
 
 async function markRecipientUnsubscribed(email, options = {}) {
@@ -724,6 +751,8 @@ module.exports = {
   logEmailRejection,
   getEmailRejectionList,
   isEmailUnsubscribed,
+  isEmailSuppressed,
+  getSuppressedCount,
   markRecipientUnsubscribed,
   logEmailEngagementEvent,
   getEmailAnalyticsPayload

@@ -13,7 +13,7 @@ const { getPool, ensureDbAvailable } = require("../config/database");
 const helpers = require("../utils/helpers");
 const cryptoUtils = require("../utils/crypto");
 const { broadcastInboxEvent } = require("../middleware/requestHelpers");
-const { QueueServiceClient } = require("@azure/storage-queue");
+const { SQSClient, SendMessageBatchCommand } = require("@aws-sdk/client-sqs");
 const nodemailer = require("nodemailer");
 // using built-in fetch
 const net = require("net");
@@ -21,42 +21,35 @@ const dns = require("dns").promises;
 const crypto = require("crypto");
 
 
-function getAzureEmailQueueConfig() {
-  const connectionString = String(process.env.AZURE_STORAGE_QUEUE_CONNECTION_STRING || "").trim();
-  const queueName = String(process.env.AZURE_EMAIL_QUEUE_NAME || "").trim();
+function getSqsEmailQueueConfig() {
+  const queueUrl = String(process.env.AWS_SQS_QUEUE_URL || "").trim();
+  const region = String(process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "ap-south-1").trim();
 
   return {
-    enabled: Boolean(connectionString && queueName),
-    connectionString,
-    queueName,
+    enabled: Boolean(queueUrl),
+    queueUrl,
+    region,
   };
 }
 
-async function initAzureEmailQueue() {
-  const config = getAzureEmailQueueConfig();
+async function initSqsEmailQueue() {
+  const config = getSqsEmailQueueConfig();
   if (!config.enabled) {
     console.log(
-      "Azure Email Queue disabled. Set AZURE_STORAGE_QUEUE_CONNECTION_STRING and AZURE_EMAIL_QUEUE_NAME to enable queue-based SMTP campaigns.",
+      "AWS SQS Email Queue disabled. Set AWS_SQS_QUEUE_URL to enable queue-based SMTP campaigns.",
     );
     emailQueueRuntime.enabled = false;
     emailQueueRuntime.queueClient = null;
-    emailQueueRuntime.queueName = "";
+    emailQueueRuntime.queueUrl = "";
     return;
   }
 
-  const queueServiceClient = QueueServiceClient.fromConnectionString(config.connectionString);
-  const queueClient = queueServiceClient.getQueueClient(config.queueName);
-  await queueClient.createIfNotExists();
+  const sqsClient = new SQSClient({ region: config.region });
 
   emailQueueRuntime.enabled = true;
-  emailQueueRuntime.queueClient = queueClient;
-  emailQueueRuntime.queueName = config.queueName;
-  console.log(`Azure Email Queue enabled: ${config.queueName}`);
-  if (AZURE_EMAIL_QUEUE_VISIBILITY_TIMEOUT_SECONDS > AZURE_EMAIL_QUEUE_VISIBILITY_TIMEOUT_SECONDS_RAW) {
-    console.log(
-      `Azure Email Queue visibility timeout raised to ${AZURE_EMAIL_QUEUE_VISIBILITY_TIMEOUT_SECONDS}s to match SMTP rate/batch size.`,
-    );
-  }
+  emailQueueRuntime.queueClient = sqsClient;
+  emailQueueRuntime.queueUrl = config.queueUrl;
+  console.log(`AWS SQS Email Queue enabled: ${config.queueUrl}`);
 }
 
 async function getEmailQueueSmtpContext(provider) {
@@ -88,12 +81,33 @@ async function applyEmailQueueThrottle(sendDelayMs = DEFAULT_SMTP_SEND_DELAY_MS)
   }
 }
 
-async function enqueueEmailTaskMessage(taskPayload) {
-  if (!emailQueueRuntime.enabled || !emailQueueRuntime.queueClient) {
+async function batchEnqueueEmailTaskMessagesSqs(taskPayloads) {
+  if (!emailQueueRuntime.enabled || !emailQueueRuntime.queueClient || !taskPayloads.length) {
     return false;
   }
 
-  await emailQueueRuntime.queueClient.sendMessage(JSON.stringify(taskPayload || {}));
+  const batchSize = 10;
+  const batches = [];
+  for (let i = 0; i < taskPayloads.length; i += batchSize) {
+    batches.push(taskPayloads.slice(i, i + batchSize));
+  }
+
+  const MAX_CONCURRENCY = 10;
+  for (let i = 0; i < batches.length; i += MAX_CONCURRENCY) {
+    const concurrentBatches = batches.slice(i, i + MAX_CONCURRENCY);
+    await Promise.all(
+      concurrentBatches.map(async (batch) => {
+        const command = new SendMessageBatchCommand({
+          QueueUrl: emailQueueRuntime.queueUrl,
+          Entries: batch.map((task, idx) => ({
+            Id: `msg-${Date.now()}-${idx}-${crypto.randomUUID()}`,
+            MessageBody: JSON.stringify(task)
+          }))
+        });
+        await emailQueueRuntime.queueClient.send(command);
+      })
+    );
+  }
   return true;
 }
 
@@ -286,77 +300,11 @@ async function processQueuedEmailTask(payload, options = {}) {
   };
 }
 
-async function drainAzureEmailQueueOnce() {
-  if (!emailQueueRuntime.enabled || !emailQueueRuntime.queueClient || emailQueueRuntime.pollInProgress) {
-    return;
-  }
-
-  emailQueueRuntime.pollInProgress = true;
-  try {
-    const response = await emailQueueRuntime.queueClient.receiveMessages({
-      numberOfMessages: AZURE_EMAIL_QUEUE_BATCH_SIZE,
-      visibilityTimeout: AZURE_EMAIL_QUEUE_VISIBILITY_TIMEOUT_SECONDS,
-    });
-    const messages = response.receivedMessageItems || [];
-
-    for (const message of messages) {
-      let shouldDelete = false;
-      try {
-        const payload = JSON.parse(String(message.messageText || "{}"));
-        const messageType = String(payload.type || "smtp_email_task").trim().toLowerCase();
-        if (messageType === "smtp_email_task") {
-          const outcome = await processQueuedEmailTask(payload, {
-            dequeueCount: Number(message.dequeueCount || 1),
-          });
-          shouldDelete = outcome?.action !== "retry";
-          continue;
-        }
-
-        if (messageType !== "smtp_campaign") {
-          shouldDelete = true;
-          continue;
-        }
-
-        void processCampaignQueue(CAMPAIGN_CHANNEL_EMAIL);
-        shouldDelete = true;
-      } catch (error) {
-        const dequeueCount = Number(message.dequeueCount || 0);
-        if (dequeueCount >= AZURE_EMAIL_QUEUE_MAX_DEQUEUE) {
-          shouldDelete = true;
-          console.error("Dropping poison Azure email queue message.", error.message || error);
-        }
-      }
-
-      if (shouldDelete) {
-        await emailQueueRuntime.queueClient.deleteMessage(message.messageId, message.popReceipt);
-      }
-    }
-  } catch (error) {
-    console.error("Azure email queue polling failed.", error.message || error);
-  } finally {
-    emailQueueRuntime.pollInProgress = false;
-  }
-}
-
-function startAzureEmailQueueConsumer() {
-  if (!emailQueueRuntime.enabled || emailQueueRuntime.pollTimer) {
-    return;
-  }
-
-  emailQueueRuntime.pollTimer = setInterval(() => {
-    void drainAzureEmailQueueOnce();
-  }, AZURE_EMAIL_QUEUE_POLL_INTERVAL_MS);
-
-  void drainAzureEmailQueueOnce();
-}
-
 module.exports = {
-  getAzureEmailQueueConfig,
-  initAzureEmailQueue,
+  getSqsEmailQueueConfig,
+  initSqsEmailQueue,
   getEmailQueueSmtpContext,
   applyEmailQueueThrottle,
-  enqueueEmailTaskMessage,
-  processQueuedEmailTask,
-  drainAzureEmailQueueOnce,
-  startAzureEmailQueueConsumer
+  batchEnqueueEmailTaskMessagesSqs,
+  processQueuedEmailTask
 };

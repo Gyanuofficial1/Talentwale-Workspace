@@ -175,18 +175,21 @@ async function createEmailCampaignRecord(payload, total, rows = [], recipientCol
       [campaignId, CAMPAIGN_CHANNEL_EMAIL, Number(total || 0), JSON.stringify(payload || {})],
     );
 
-    for (let index = 0; index < sanitizedRows.length; index += 1) {
-      const row = sanitizedRows[index];
-      const recipient = normalizeEmail(getCell(row, recipientColumn));
+    if (sanitizedRows.length > 0) {
+      const campaignIds = Array(sanitizedRows.length).fill(campaignId);
+      const rowIndexes = sanitizedRows.map((_, i) => i);
+      const recipients = sanitizedRows.map((row) => String(normalizeEmail(getCell(row, recipientColumn)) || ""));
+      const rowDatas = sanitizedRows.map((row) => JSON.stringify(row));
+      const statuses = Array(sanitizedRows.length).fill('pending');
 
       await client.query(
         `
           INSERT INTO campaign_recipients (
             campaign_id, row_index, recipient, row_data, status
           )
-          VALUES ($1, $2, $3, $4::jsonb, 'pending')
+          SELECT * FROM UNNEST($1::text[], $2::int[], $3::text[], $4::jsonb[], $5::text[])
         `,
-        [campaignId, index, String(recipient || ""), JSON.stringify(row)],
+        [campaignIds, rowIndexes, recipients, rowDatas, statuses]
       );
     }
 
@@ -218,10 +221,11 @@ async function enqueueEmailCampaignTasks(campaignId, campaignPayload, rows, reci
   const baseUrl = String(campaignPayload.baseUrl || "").trim();
   const sanitizedRows = rows.map((row) => sanitizeRowObject(row));
 
+  const taskPayloads = [];
   for (let rowIndex = 0; rowIndex < sanitizedRows.length; rowIndex += 1) {
     const rowData = sanitizedRows[rowIndex];
     const recipient = normalizeEmail(getCell(rowData, recipientColumn));
-    await enqueueEmailTaskMessage({
+    taskPayloads.push({
       type: "smtp_email_task",
       campaignId: String(campaignId || ""),
       rowIndex,
@@ -239,13 +243,16 @@ async function enqueueEmailCampaignTasks(campaignId, campaignPayload, rows, reci
     });
   }
 
+  await batchEnqueueEmailTaskMessagesSqs(taskPayloads);
+
   await dbPool.query(
     `
       UPDATE campaigns
       SET status = 'running',
           started_at = COALESCE(started_at, NOW()),
           updated_at = NOW(),
-          last_message = 'Queued in Azure'
+          last_message = 'Queued in AWS SQS'
+
       WHERE id = $1
     `,
     [campaignId],
@@ -276,20 +283,24 @@ async function createCampaignWithRecipients(channel, payload, rows, recipientCol
       [campaignId, channel, sanitizedRows.length, JSON.stringify(payload || {})],
     );
 
-    for (let index = 0; index < sanitizedRows.length; index += 1) {
-      const row = sanitizedRows[index];
-      const recipientRaw = getCell(row, recipientColumn);
-      const recipient =
-        channel === CAMPAIGN_CHANNEL_WHATSAPP ? normalizePhone(recipientRaw) : normalizeEmail(recipientRaw);
+    if (sanitizedRows.length > 0) {
+      const campaignIds = Array(sanitizedRows.length).fill(campaignId);
+      const rowIndexes = sanitizedRows.map((_, i) => i);
+      const recipients = sanitizedRows.map((row) => {
+        const recipientRaw = getCell(row, recipientColumn);
+        return String((channel === CAMPAIGN_CHANNEL_WHATSAPP ? normalizePhone(recipientRaw) : normalizeEmail(recipientRaw)) || "");
+      });
+      const rowDatas = sanitizedRows.map((row) => JSON.stringify(row));
+      const statuses = Array(sanitizedRows.length).fill('pending');
 
       await client.query(
         `
           INSERT INTO campaign_recipients (
             campaign_id, row_index, recipient, row_data, status
           )
-          VALUES ($1, $2, $3, $4::jsonb, 'pending')
+          SELECT * FROM UNNEST($1::text[], $2::int[], $3::text[], $4::jsonb[], $5::text[])
         `,
-        [campaignId, index, String(recipient || ""), JSON.stringify(row)],
+        [campaignIds, rowIndexes, recipients, rowDatas, statuses]
       );
     }
 

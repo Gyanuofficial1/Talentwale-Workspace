@@ -247,7 +247,7 @@ async function handleApi(req, res) {
           smtpProbeEnabled: isEmailSmtpProbeEnabled(),
           smtpProbeMaxMxHosts: EMAIL_VERIFY_SMTP_MAX_MX_TO_TRY,
           suppressionEnabled: EMAIL_SUPPRESSION_ENABLED,
-          suppressedCount: suppressedEmailRecipients.size,
+          suppressedCount: await getSuppressedCount(),
         },
       });
     } catch (error) {

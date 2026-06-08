@@ -494,7 +494,7 @@ async function preflightEmailDeliverability(recipient) {
     };
   }
 
-  if (EMAIL_SUPPRESSION_ENABLED && suppressedEmailRecipients.has(email)) {
+  if (EMAIL_SUPPRESSION_ENABLED && (await isEmailSuppressed(email))) {
     return {
       ok: false,
       reason: "Recipient suppressed after earlier hard bounce.",
@@ -503,7 +503,7 @@ async function preflightEmailDeliverability(recipient) {
     };
   }
 
-  if (isEmailUnsubscribed(email)) {
+  if (await isEmailUnsubscribed(email)) {
     return {
       ok: false,
       reason: "Recipient has unsubscribed from campaigns.",

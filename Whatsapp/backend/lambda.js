@@ -62,6 +62,22 @@ exports.handler = async (event, context) => {
   // First invocation (cold start) mein DB init karo
   await ensureInitialized();
 
+  // Handle SQS trigger events
+  if (event.Records && event.Records.length > 0 && event.Records[0].eventSource === "aws:sqs") {
+    console.log(`[Lambda] Processing ${event.Records.length} SQS messages.`);
+    for (const record of event.Records) {
+      try {
+        const payload = JSON.parse(record.body || "{}");
+        if (typeof global.processQueuedEmailTask === "function") {
+          await global.processQueuedEmailTask(payload, { dequeueCount: 1 });
+        }
+      } catch (err) {
+        console.error("[Lambda] Failed to process SQS message", err);
+      }
+    }
+    return { statusCode: 200, body: "Processed SQS Batch" };
+  }
+
   // API Gateway event → HTTP request → server.js handle → response
   return serverlessApp(event, context);
 };

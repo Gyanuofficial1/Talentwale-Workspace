@@ -171,10 +171,9 @@ generateFile("Campaign Service", [
 ], "services", "campaignService.js", CONSTANTS_IMPORTS);
 
 generateFile("Azure Queue Service", [
-  "getAzureEmailQueueConfig", "initAzureEmailQueue", "getEmailQueueSmtpContext", 
-  "applyEmailQueueThrottle", "enqueueEmailTaskMessage", "processQueuedEmailTask", 
-  "drainAzureEmailQueueOnce", "startAzureEmailQueueConsumer"
-], "services", "azureQueueService.js", CONSTANTS_IMPORTS);
+  "getSqsEmailQueueConfig", "initSqsEmailQueue", "getEmailQueueSmtpContext", 
+  "applyEmailQueueThrottle", "batchEnqueueEmailTaskMessagesSqs", "processQueuedEmailTask"
+], "services", "sqsQueueService.js", CONSTANTS_IMPORTS);
 
 generateFile("Contact Service", [
   "workbookToContacts", "googleSheetCsvUrl"

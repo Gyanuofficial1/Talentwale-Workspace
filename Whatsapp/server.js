@@ -39,7 +39,7 @@ loadToGlobal(require("./src/models/conversationModel"));
 loadToGlobal(require("./src/services/smtpService"));
 loadToGlobal(require("./src/services/emailVerifyService"));
 loadToGlobal(require("./src/services/campaignService"));
-loadToGlobal(require("./src/services/azureQueueService"));
+loadToGlobal(require("./src/services/sqsQueueService"));
 loadToGlobal(require("./src/services/contactService"));
 loadToGlobal(require("./src/services/emailTrackingService"));
 
@@ -87,13 +87,13 @@ const server = http.createServer(async (req, res) => {
 async function lambdaInit() {
   await database.initDatabase();
   await global.loadActiveSmtpCredentialsFromDb();
-  await global.initAzureEmailQueue();
+  await global.initSqsEmailQueue();
   await global.loadEmailUnsubscribesFromDb();
   await global.loadEmailSuppressionsFromDb();
   await global.resetProcessingRecipientsOnStartup();
   
   if (global.emailQueueRuntime && global.emailQueueRuntime.enabled) {
-    global.startAzureEmailQueueConsumer();
+    // startAzureEmailQueueConsumer is removed since we use Lambda SQS Triggers now
   }
 }
 
