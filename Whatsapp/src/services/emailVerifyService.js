@@ -13,7 +13,6 @@ const { getPool, ensureDbAvailable } = require("../config/database");
 const helpers = require("../utils/helpers");
 const cryptoUtils = require("../utils/crypto");
 const { broadcastInboxEvent } = require("../middleware/requestHelpers");
-const { QueueServiceClient } = require("@azure/storage-queue");
 const nodemailer = require("nodemailer");
 // using built-in fetch
 const net = require("net");
@@ -87,7 +86,7 @@ function rememberSuppressedRecipient(email, errorText, options = {}) {
 
 function canRetrySoftQueueFailure(dequeueCount) {
   const currentDequeue = Math.max(1, Number(dequeueCount || 1));
-  return currentDequeue <= AZURE_EMAIL_QUEUE_SOFT_FAIL_MAX_RETRY + 1;
+  return currentDequeue <= EMAIL_QUEUE_SOFT_FAIL_MAX_RETRY + 1;
 }
 
 async function resolveDomainRecordHealth(domain) {

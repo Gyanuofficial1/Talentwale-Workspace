@@ -13,7 +13,6 @@ const { getPool, ensureDbAvailable } = require("../config/database");
 const helpers = require("../utils/helpers");
 const cryptoUtils = require("../utils/crypto");
 const { broadcastInboxEvent } = require("../middleware/requestHelpers");
-const { QueueServiceClient } = require("@azure/storage-queue");
 const nodemailer = require("nodemailer");
 // using built-in fetch
 const net = require("net");
