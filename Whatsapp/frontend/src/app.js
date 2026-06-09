@@ -250,6 +250,7 @@ let selectedConversationId = "";
 let selectedParticipant = "";
 let inboxPollTimer = null;
 let inboxEventSource = null;
+let inboxReconnectTimer = null;
 let activeView = "quick";
 let pendingAttachment = null;
 const inboxPageSize = 10;
@@ -2324,6 +2325,11 @@ function startInboxLiveUpdates() {
     return;
   }
 
+  if (inboxReconnectTimer) {
+    clearTimeout(inboxReconnectTimer);
+    inboxReconnectTimer = null;
+  }
+
   logActivity("Starting live inbox stream...");
   const token = localStorage.getItem("dashboard_token") || "";
   inboxEventSource = new EventSource(`/api/inbox/stream?token=${encodeURIComponent(token)}`);
@@ -2370,22 +2376,24 @@ function startInboxLiveUpdates() {
   };
 
   inboxEventSource.onerror = () => {
+    logActivity("Live stream connection error. Reconnecting in 5 seconds...", "warn");
     if (inboxEventSource) {
       inboxEventSource.close();
       inboxEventSource = null;
     }
-    if (inboxPollTimer) {
-      clearInterval(inboxPollTimer);
-      inboxPollTimer = null;
+    if (!inboxReconnectTimer) {
+      inboxReconnectTimer = setTimeout(() => {
+        inboxReconnectTimer = null;
+        startInboxLiveUpdates();
+      }, 5000);
     }
-    logActivity("Live stream disconnected. No fallback polling enabled.", "error");
   };
 
   inboxEventSource.onopen = () => {
     logActivity("Live inbox stream connected.");
-    if (inboxPollTimer) {
-      clearInterval(inboxPollTimer);
-      inboxPollTimer = null;
+    if (inboxReconnectTimer) {
+      clearTimeout(inboxReconnectTimer);
+      inboxReconnectTimer = null;
     }
   };
 }

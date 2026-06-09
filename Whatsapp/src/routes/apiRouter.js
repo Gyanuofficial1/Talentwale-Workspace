@@ -1040,7 +1040,7 @@ async function handleApi(req, res) {
     return true;
   }
 
-  if (req.method === "GET" && req.url === "/api/inbox/stream") {
+  if (req.method === "GET" && req.url.startsWith("/api/inbox/stream")) {
     res.writeHead(200, {
       "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
