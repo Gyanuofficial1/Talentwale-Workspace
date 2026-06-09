@@ -182,115 +182,242 @@
                   </div>
                 </div>
 
-                <div class="card workflow-card smtp-card is-hidden" id="smtpBulkCard">
-                  <div class="card-header smtp-card-header">
-                    <h2>Email Campaign Studio</h2>
-                    <p>Fast bulk email workflow</p>
+                <div class="sleek-dashboard is-hidden" id="smtpBulkCard">
+                  <div class="sleek-dashboard-header sleek-hide-old-header">
+                    <div>
+                      <h2>Bulk Email Campaign Dashboard</h2>
+                      <p>Manage and monitor your email campaigns</p>
+                    </div>
+                    <button class="btn-new-campaign" id="btnNewCampaignSleek">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                      New Campaign
+                    </button>
                   </div>
-                  <div class="card-body smtp-workspace">
-                    <div class="smtp-live-strip" id="smtpLiveStrip">
-                      <div class="smtp-live-item">
-                        <span>Users</span>
-                        <strong id="smtpLiveLoaded">0</strong>
-                      </div>
-                      <div class="smtp-live-item">
-                        <span>Sent</span>
-                        <strong id="smtpLiveSent">0</strong>
-                      </div>
-                      <div class="smtp-live-item">
-                        <span>Failed</span>
-                        <strong id="smtpLiveFailed">0</strong>
-                      </div>
-                      <div class="smtp-live-item smtp-live-item-wide">
-                        <span>Status</span>
-                        <strong id="smtpLiveState">Idle</strong>
-                        <em id="smtpLiveUpdated">No updates yet</em>
-                      </div>
-                    </div>
 
-                    <div class="smtp-pane smtp-pane-source">
-                      <h3 class="smtp-pane-title">1. Audience Source</h3>
-                      <p class="smtp-pane-text">Load audience from Sheet or file.</p>
-
-                      <div class="smtp-source-compact">
-                        <div class="smtp-source-block smtp-source-sheet">
-                          <label for="smtpSheetUrl">Sheet URL</label>
-                          <div class="smtp-source-input-row">
-                            <input type="text" id="smtpSheetUrl" class="input" placeholder="https://docs.google.com/spreadsheets/d/...">
-                            <button type="button" id="loadSmtpSheetButton" class="btn-outline">Parse</button>
+                  <!-- 4 Metric Cards -->
+                  <div class="sleek-metrics-row">
+                    <div class="sleek-metric-card">
+                      <div class="sleek-metric-header">
+                        <div>
+                          <div class="sleek-metric-title">Total Sent</div>
+                          <div class="sleek-metric-value" id="smtpLiveSent">0</div>
+                          <div class="sleek-metric-trend trend-up">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                            <span id="smtpLiveLoaded">0</span> Users
                           </div>
                         </div>
-
-                        <div class="smtp-source-or">OR</div>
-
-                        <div class="smtp-source-block smtp-source-upload">
-                          <label for="smtpAudienceUpload">Upload File</label>
-                          <input type="file" id="smtpAudienceUpload" accept=".xlsx,.xls,.csv" class="file-input smtp-file-input smtp-file-input-compact">
+                        <div class="sleek-metric-icon icon-blue">
+                          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                         </div>
-                      </div>
-
-                      <div class="smtp-source-row mt-2">
-                        <div class="smtp-source-column is-hidden" id="smtpRecipientColumnWrap">
-                          <label>Recipient Column</label>
-                          <select id="smtpRecipientColumn" class="input"></select>
-                          <small class="smtp-help">Email IDs wala column select karein.</small>
-                        </div>
-                      </div>
-
-                      <div class="form-group mt-2 is-hidden" id="smtpAudienceSheetWrap">
-                        <label>Sheet Name</label>
-                        <select id="smtpAudienceSheet" class="input"></select>
                       </div>
                     </div>
+                    <div class="sleek-metric-card">
+                      <div class="sleek-metric-header">
+                        <div>
+                          <div class="sleek-metric-title">Delivered</div>
+                          <div class="sleek-metric-value" id="smtpLiveState">Idle</div>
+                          <div class="sleek-metric-trend trend-up">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                            <span id="smtpLiveUpdated">No updates yet</span>
+                          </div>
+                        </div>
+                        <div class="sleek-metric-icon icon-green">
+                          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="sleek-metric-card">
+                      <div class="sleek-metric-header">
+                        <div>
+                          <div class="sleek-metric-title">Failed / Open Rate</div>
+                          <div class="sleek-metric-value" id="smtpLiveFailed">0</div>
+                          <div class="sleek-metric-trend trend-down">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                            Failed Sends
+                          </div>
+                        </div>
+                        <div class="sleek-metric-icon icon-orange">
+                          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="sleek-metric-card">
+                      <div class="sleek-metric-header">
+                        <div>
+                          <div class="sleek-metric-title">Click Rate</div>
+                          <div class="sleek-metric-value">0%</div>
+                          <div class="sleek-metric-trend trend-muted">
+                            -- vs last month
+                          </div>
+                        </div>
+                        <div class="sleek-metric-icon icon-purple">
+                          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                    <div class="smtp-pane smtp-pane-template">
-                      <h3 class="smtp-pane-title">2. Email Template</h3>
-                      <p class="smtp-pane-text">Use placeholders like {{name}} and {{role}}.</p>
+                  <div class="sleek-main-grid">
+                    <!-- Left Column: Create / Run Campaign -->
+                    <div class="sleek-panel">
+                      <div class="sleek-panel-title">
+                        <svg width="20" height="20" fill="none" stroke="#2563eb" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        Create / Run Campaign
+                      </div>
+                      <p class="sleek-panel-subtitle">Fill in the details below to launch your email campaign</p>
 
-                      <div class="form-group mt-3">
-                        <label>Email Subject Template</label>
-                        <input type="text" id="smtpSubjectTemplate" class="input" placeholder="Hi {{name}}, opportunity update for {{role}}" />
+                      <!-- Audience Source (Migrated from old UI) -->
+                      <div class="sleek-form-group">
+                        <label class="sleek-label">Audience Source</label>
+                        <div class="smtp-source-compact" style="border-radius: var(--radius-md); padding: 0.5rem; border: 1px solid #d1d5db; background: transparent;">
+                          <div class="smtp-source-block smtp-source-sheet">
+                            <label for="smtpSheetUrl">Sheet URL</label>
+                            <div class="smtp-source-input-row">
+                              <input type="text" id="smtpSheetUrl" class="sleek-input" placeholder="https://docs.google.com/spreadsheets/d/...">
+                              <button type="button" id="loadSmtpSheetButton" class="btn-outline">Parse</button>
+                            </div>
+                          </div>
+                          <div class="smtp-source-or" style="border-color:#d1d5db;">OR</div>
+                          <div class="smtp-source-block smtp-source-upload">
+                            <label for="smtpAudienceUpload">Upload File</label>
+                            <input type="file" id="smtpAudienceUpload" accept=".xlsx,.xls,.csv" class="sleek-input" style="padding: 0.4rem;">
+                          </div>
+                        </div>
+                        <div class="smtp-source-row mt-2">
+                          <div class="smtp-source-column is-hidden" id="smtpRecipientColumnWrap" style="background:transparent; border: 1px solid #d1d5db;">
+                            <label class="sleek-label" style="margin-bottom:0.25rem;">Recipient Column</label>
+                            <select id="smtpRecipientColumn" class="sleek-input" style="padding:0.4rem;"></select>
+                            <small class="smtp-help">Select the column containing email IDs.</small>
+                          </div>
+                        </div>
+                        <div class="form-group mt-2 is-hidden" id="smtpAudienceSheetWrap">
+                          <label class="sleek-label">Sheet Name</label>
+                          <select id="smtpAudienceSheet" class="sleek-input"></select>
+                        </div>
                       </div>
 
-                      <div class="form-group mt-3">
-                        <div class="smtp-body-head">
-                          <label>Email Body Template</label>
-                          <div class="smtp-body-tools">
-                            <label class="smtp-body-format-label" for="smtpBodyFormat">Format</label>
-                            <select id="smtpBodyFormat" class="input smtp-body-format-select">
+                      <div class="sleek-form-group">
+                        <label class="sleek-label">Campaign Name / Speed</label>
+                        <div style="display:flex; gap:1rem;">
+                          <input type="text" class="sleek-input" placeholder="e.g. Summer Sale 2024" style="flex:2;" />
+                          <input type="number" id="smtpSendRatePerMinute" class="sleek-input" min="1" max="60000" step="1" placeholder="Emails/min (e.g. 120)" style="flex:1;" />
+                        </div>
+                      </div>
+
+                      <div class="sleek-form-group">
+                        <label class="sleek-label">Subject Line</label>
+                        <input type="text" id="smtpSubjectTemplate" class="sleek-input" placeholder="Enter email subject... e.g. Hi {{name}}!" />
+                      </div>
+
+                      <div class="sleek-form-group" style="margin-bottom:0.5rem;">
+                        <label class="sleek-label" style="display:flex; justify-content:space-between; align-items:center;">
+                          Email Body
+                          <div style="display:flex; gap:0.5rem; align-items:center;">
+                            <select id="smtpBodyFormat" class="sleek-input" style="padding:0.25rem 0.5rem; width:auto;">
                               <option value="html">HTML</option>
-                              <option value="plain">Plain Text</option>
+                              <option value="plain">Plain</option>
                             </select>
-                            <button type="button" id="smtpPreviewButton" class="btn-outline">Preview</button>
+                            <button type="button" id="smtpPreviewButton" class="btn-outline" style="padding:0.25rem 0.5rem; font-size:0.75rem;">Preview</button>
+                          </div>
+                        </label>
+                        <div class="sleek-editor-toolbar">
+                          <button type="button"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4a5 5 0 010 10H8v6H6V4zm2 8h2a3 3 0 000-6H8v6z"></path></svg></button>
+                          <button type="button"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M10 4l-4 16h2l1.5-6h5L16 20h2L14 4h-4zm-1.5 8L12 6.5 13.5 12h-5z"></path></svg></button>
+                          <button type="button"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M13.18 4l.24 1.2A3 3 0 0016.36 7H21v9h-5.18l-.24-1.2A3 3 0 0012.64 13H4V4h9.18z"></path></svg></button>
+                          <button type="button"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h16v2H4v-2z"></path></svg></button>
+                          <button type="button"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"></path></svg></button>
+                        </div>
+                        <textarea id="smtpBodyTemplate" class="sleek-textarea sleek-editor-textarea" placeholder="Write your email content here... Use {{name}} for variables."></textarea>
+                      </div>
+                      
+                      <div class="smtp-variable-wrap" style="background:transparent; border:none; padding:0; margin-bottom:1.5rem;">
+                        <div id="smtpVariableTokens" class="smtp-variable-list"></div>
+                      </div>
+
+                      <div style="display:flex; gap:1rem; border-top:1px solid #e5e7eb; padding-top:1.5rem;">
+                        <button type="button" id="sendSmtpTestButton" class="btn-outline btn-large">Send Test</button>
+                        <button type="button" id="sendSmtpBulkButton" class="btn-primary btn-large" style="background:#0052ff;color:white;border:none;">Launch Campaign</button>
+                        <button type="button" id="stopSmtpBulkButton" class="btn-outline btn-large">Stop Campaign</button>
+                      </div>
+                    </div>
+
+                    <!-- Right Column: Recent Campaigns (Mockup + Real Delivery Info) -->
+                    <div class="sleek-panel">
+                      <div class="sleek-recent-header">
+                        <div class="sleek-panel-title" style="margin:0;"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Recent Campaigns</div>
+                        <a href="#" class="sleek-view-all">View all</a>
+                      </div>
+
+                      <div class="sleek-campaign-list">
+                        <!-- Mock Item 1 -->
+                        <div class="sleek-campaign-item">
+                          <div class="sleek-campaign-top">
+                            <div class="sleek-campaign-name">Spring Newsletter</div>
+                            <div class="sleek-badge badge-completed">Completed</div>
+                          </div>
+                          <div class="sleek-campaign-date">Sent Apr 12, 2024</div>
+                          <div class="sleek-campaign-stats">
+                            <div class="sleek-campaign-stat">
+                              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                              Open <strong>52.1%</strong>
+                            </div>
+                            <div class="sleek-campaign-stat">
+                              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                              Click <strong>24.3%</strong>
+                            </div>
+                            <div class="sleek-stat-sent">
+                              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:2px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                              8,400 sent
+                            </div>
                           </div>
                         </div>
-                        <textarea id="smtpBodyTemplate" class="smtp-template-area" placeholder="Hello {{name}},\n\nYour interview is scheduled on {{interviewDate}}."></textarea>
-                      </div>
 
-                      <div class="form-group mt-3">
-                        <label for="smtpSendRatePerMinute">Send Speed (emails/min)</label>
-                        <input
-                          type="number"
-                          id="smtpSendRatePerMinute"
-                          class="input"
-                          min="1"
-                          max="60000"
-                          step="1"
-                          placeholder="120"
-                        />
-                        <small class="smtp-help">Bulk campaign ke liye per-minute email rate set karein.</small>
-                      </div>
-                    </div>
+                        <!-- Mock Item 2 -->
+                        <div class="sleek-campaign-item">
+                          <div class="sleek-campaign-top">
+                            <div class="sleek-campaign-name">Product Launch Blast</div>
+                            <div class="sleek-badge badge-sending">Sending</div>
+                          </div>
+                          <div class="sleek-campaign-date">Sent Apr 18, 2024</div>
+                          <div class="sleek-campaign-stats">
+                            <div class="sleek-campaign-stat">
+                              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                              Open <strong>38.7%</strong>
+                            </div>
+                            <div class="sleek-campaign-stat">
+                              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                              Click <strong>17.9%</strong>
+                            </div>
+                            <div class="sleek-stat-sent">
+                              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:2px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                              12,400 sent
+                            </div>
+                          </div>
+                        </div>
 
-                    <div class="smtp-variable-wrap">
-                      <div id="smtpVariableTokens" class="smtp-variable-list"></div>
-                    </div>
+                        <!-- Mock Item 3 -->
+                        <div class="sleek-campaign-item">
+                          <div class="sleek-campaign-top">
+                            <div class="sleek-campaign-name">Flash Sale Alert</div>
+                            <div class="sleek-badge badge-failed">Failed</div>
+                          </div>
+                          <div class="sleek-campaign-date">Sent Apr 5, 2024</div>
+                          <div class="sleek-campaign-stats">
+                            <div class="sleek-campaign-stat">
+                              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                              Open <strong>--</strong>
+                            </div>
+                            <div class="sleek-campaign-stat">
+                              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                              Click <strong>--</strong>
+                            </div>
+                            <div class="sleek-stat-sent">
+                              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:2px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                              3,200 sent
+                            </div>
+                          </div>
+                        </div>
 
-                    <div class="smtp-action-bar">
-                      <div class="form-actions">
-                        <button type="button" id="sendSmtpTestButton" class="btn-outline btn-large">Send Test</button>
-                        <button type="button" id="sendSmtpBulkButton" class="btn-primary btn-large">Send Campaign</button>
-                        <button type="button" id="stopSmtpBulkButton" class="btn-outline btn-large">Stop Campaign</button>
                       </div>
                     </div>
                   </div>
