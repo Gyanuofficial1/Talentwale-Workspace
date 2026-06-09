@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css?v=4" />
+    <link rel="stylesheet" href="/styles.css?v=5" />
     <!-- AWS Amplify: API Gateway URL yahan inject hoga (amplify.yml mein sed se) -->
     <script>
       window.__API_CONFIG__ = {
@@ -268,19 +268,18 @@
 
                       <!-- Audience Source (Migrated from old UI) -->
                       <div class="sleek-form-group">
-                        <label class="sleek-label">Audience Source</label>
-                        <div class="smtp-source-compact" style="border-radius: var(--radius-md); padding: 0.5rem; border: 1px solid #d1d5db; background: transparent;">
-                          <div class="smtp-source-block smtp-source-sheet">
-                            <label for="smtpSheetUrl">Sheet URL</label>
-                            <div class="smtp-source-input-row">
+                        <div style="display: flex; gap: 1rem; align-items: flex-end;">
+                          <div style="flex: 1;">
+                            <label class="sleek-label" for="smtpSheetUrl">Sheet URL</label>
+                            <div style="display: flex; gap: 0.5rem;">
                               <input type="text" id="smtpSheetUrl" class="sleek-input" placeholder="https://docs.google.com/spreadsheets/d/...">
-                              <button type="button" id="loadSmtpSheetButton" class="btn-outline">Parse</button>
+                              <button type="button" id="loadSmtpSheetButton" class="btn-outline" style="white-space: nowrap;">Parse</button>
                             </div>
                           </div>
-                          <div class="smtp-source-or" style="border-color:#d1d5db;">OR</div>
-                          <div class="smtp-source-block smtp-source-upload">
-                            <label for="smtpAudienceUpload">Upload File</label>
-                            <input type="file" id="smtpAudienceUpload" accept=".xlsx,.xls,.csv" class="sleek-input" style="padding: 0.4rem;">
+                          <div style="color: #9ca3af; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem;">OR</div>
+                          <div style="flex: 1;">
+                            <label class="sleek-label" for="smtpAudienceUpload">Upload File</label>
+                            <input type="file" id="smtpAudienceUpload" accept=".xlsx,.xls,.csv" class="sleek-input" style="padding: 0.55rem 1rem;">
                           </div>
                         </div>
                         <div class="smtp-source-row mt-2">
