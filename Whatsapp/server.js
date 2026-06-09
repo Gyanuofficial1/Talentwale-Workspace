@@ -104,7 +104,8 @@ if (process.env.IS_LAMBDA !== "true" && process.env.NODE_ENV !== "test") {
     try {
       await lambdaInit();
     } catch (err) {
-      console.error("Initialization failed:", err);
+      console.error("Initialization failed:", err.message);
+      process.exit(1);
     }
   });
 }

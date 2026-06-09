@@ -13,7 +13,7 @@ const { getPool, ensureDbAvailable } = require("../config/database");
 const helpers = require("../utils/helpers");
 const cryptoUtils = require("../utils/crypto");
 const { broadcastInboxEvent } = require("../middleware/requestHelpers");
-const { SQSClient, SendMessageBatchCommand } = require("@aws-sdk/client-sqs");
+const { SQSClient, SendMessageBatchCommand, GetQueueAttributesCommand } = require("@aws-sdk/client-sqs");
 const nodemailer = require("nodemailer");
 // using built-in fetch
 const net = require("net");
@@ -46,10 +46,22 @@ async function initSqsEmailQueue() {
 
   const sqsClient = new SQSClient({ region: config.region });
 
+  // Validate the SQS Queue URL actually exists and is accessible
+  try {
+    const testCommand = new GetQueueAttributesCommand({
+      QueueUrl: config.queueUrl,
+      AttributeNames: ["QueueArn"]
+    });
+    await sqsClient.send(testCommand);
+  } catch (err) {
+    console.error(`FATAL: Failed to validate AWS SQS Queue "${config.queueUrl}" on startup:`, err.message);
+    throw new Error(`Invalid AWS SQS Configuration: ${err.message}`);
+  }
+
   emailQueueRuntime.enabled = true;
   emailQueueRuntime.queueClient = sqsClient;
   emailQueueRuntime.queueUrl = config.queueUrl;
-  console.log(`AWS SQS Email Queue enabled: ${config.queueUrl}`);
+  console.log(`AWS SQS Email Queue verified and enabled: ${config.queueUrl}`);
 }
 
 async function getEmailQueueSmtpContext(provider) {
