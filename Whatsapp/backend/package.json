@@ -1,0 +1,35 @@
+{
+  "name": "talentwale-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TalentWale Backend - WhatsApp & Email Campaign Management API",
+  "main": "lambda.js",
+  "scripts": {
+    "start": "node ../server.js",
+    "dev": "nodemon ../server.js",
+    "start:lambda": "IS_LAMBDA=true node lambda.js",
+    "package": "cd .. && npm install --production && zip -r backend-lambda.zip server.js send-whatsapp.js backend/lambda.js backend/package.json node_modules -x '*.git*'"
+  },
+  "keywords": [
+    "whatsapp",
+    "email",
+    "campaign",
+    "api",
+    "lambda"
+  ],
+  "author": "TalentWale",
+  "license": "ISC",
+  "dependencies": {
+    "@azure-rest/communication-messages": "^1.0.0",
+    "@azure/storage-queue": "^12.29.0",
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^6.9.15",
+    "pg": "^8.13.1",
+    "serverless-http": "^3.2.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
