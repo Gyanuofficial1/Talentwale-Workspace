@@ -1,0 +1,15 @@
+version: 1
+applications:
+  - appRoot: Whatsapp/frontend
+    frontend:
+      phases:
+        build:
+          commands:
+            - mkdir -p build
+            - cp -r src/* build/
+            - cp -r public/* build/ || true
+            - if [ -n "$API_BASE_URL" ]; then sed -i "s|__AMPLIFY_API_URL__|$API_BASE_URL|g" build/index.html; else sed -i "s|__AMPLIFY_API_URL__||g" build/index.html; fi
+      artifacts:
+        baseDirectory: build
+        files:
+          - '**/*'
