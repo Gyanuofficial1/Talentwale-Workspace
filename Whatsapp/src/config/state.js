@@ -29,6 +29,21 @@ function initStateGlobals() {
   global.unsubscribeSecretWarningLogged = false;
   global.emailTrackingSecretWarningLogged = false;
   
+  global.smtpTestState = {
+    inProgress: false,
+    lastMessage: "Idle",
+    lastTestRecipient: "",
+    lastTestAt: ""
+  };
+
+  global.updateSmtpTestState = function (patch = {}) {
+    global.smtpTestState = {
+      ...global.smtpTestState,
+      ...patch,
+      lastUpdatedAt: new Date().toISOString(),
+    };
+  };
+  
   // Forward declare some functions that are passed around or have circular dependencies
   global.saveMessageToDb = null;
   global.updateMessageStatusInDb = null;
