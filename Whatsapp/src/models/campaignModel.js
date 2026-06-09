@@ -207,9 +207,6 @@ async function createEmailCampaignRecord(payload, total, rows = [], recipientCol
 }
 
 async function enqueueEmailCampaignTasks(campaignId, campaignPayload, rows, recipientColumn) {
-  if (!emailQueueRuntime.enabled || !emailQueueRuntime.queueClient) {
-    return false;
-  }
 
   const subjectTemplate = String(campaignPayload.subjectTemplate || "").trim();
   const bodyTemplate = String(campaignPayload.bodyTemplate || "").trim();

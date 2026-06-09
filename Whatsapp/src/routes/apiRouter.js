@@ -647,29 +647,14 @@ async function handleApi(req, res) {
         mailFrom: resolveSmtpFromAddress(smtpProvider, requestedFrom, getSmtpConfig(smtpProvider).from),
         replyTo: resolveSmtpReplyToAddress(requestedReplyTo, getSmtpConfig(smtpProvider).replyTo),
       };
-      let campaignId;
-      let queuedInAzure = false;
-
-      if (emailQueueRuntime.enabled) {
-        campaignId = await createEmailCampaignRecord(campaignPayload, rows.length, rows, recipientColumn);
-        queuedInAzure = await enqueueEmailCampaignTasks(campaignId, campaignPayload, rows, recipientColumn);
-      }
-
-      if (!queuedInAzure) {
-        campaignId = await createCampaignWithRecipients(
-          CAMPAIGN_CHANNEL_EMAIL,
-          campaignPayload,
-          rows,
-          recipientColumn,
-        );
-        void processCampaignQueue(CAMPAIGN_CHANNEL_EMAIL);
-      }
+      const campaignId = await createEmailCampaignRecord(campaignPayload, rows.length, rows, recipientColumn);
+      await enqueueEmailCampaignTasks(campaignId, campaignPayload, rows, recipientColumn);
 
       const campaign = await getCampaignById(campaignId);
       sendJson(res, 202, {
         ok: true,
         campaignId,
-        dispatchMode: queuedInAzure ? "azure_queue_tasks" : "in_process",
+        dispatchMode: "aws_sqs_queue_tasks",
         summary: buildCampaignSummary(campaign),
         tracking: {
           baseUrl: trackingBaseUrl,

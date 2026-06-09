@@ -82,8 +82,11 @@ async function applyEmailQueueThrottle(sendDelayMs = DEFAULT_SMTP_SEND_DELAY_MS)
 }
 
 async function batchEnqueueEmailTaskMessagesSqs(taskPayloads) {
-  if (!emailQueueRuntime.enabled || !emailQueueRuntime.queueClient || !taskPayloads.length) {
-    return false;
+  if (!emailQueueRuntime.enabled || !emailQueueRuntime.queueClient) {
+    throw new Error("AWS SQS Queue is disabled or not initialized. Campaign cannot start without active queue.");
+  }
+  if (!taskPayloads.length) {
+    return true;
   }
 
   const batchSize = 10;
