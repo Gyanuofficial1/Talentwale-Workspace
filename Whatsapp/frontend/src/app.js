@@ -2313,89 +2313,10 @@ async function loadConfig() {
     setStatus("Ready");
     logActivity(`Configuration loaded. Templates: ${templates.length}.`);
     await loadDashboardSummary({ quiet: true, force: true });
-    startInboxLiveUpdates();
   } catch (error) {
     setStatus("Config error", "error");
     logActivity(error.message, "error");
   }
-}
-
-function startInboxLiveUpdates() {
-  if (inboxEventSource) {
-    return;
-  }
-
-  if (inboxReconnectTimer) {
-    clearTimeout(inboxReconnectTimer);
-    inboxReconnectTimer = null;
-  }
-
-  logActivity("Starting live inbox stream...");
-  const token = localStorage.getItem("dashboard_token") || "";
-  inboxEventSource = new EventSource(`/api/inbox/stream?token=${encodeURIComponent(token)}`);
-
-  inboxEventSource.onmessage = (event) => {
-    let payload = {};
-    try {
-      payload = event?.data ? JSON.parse(event.data) : {};
-    } catch {
-      payload = {};
-    }
-
-    const eventType = String(payload.type || "").toLowerCase();
-    const eventConversationId = String(payload.conversationId || "");
-    const eventDirection = String(payload.direction || "").toLowerCase();
-
-    if (eventType === "campaign") {
-      applyCampaignEvent(payload);
-      return;
-    }
-
-    if (eventType === "email_analytics") {
-      scheduleSmtpAnalyticsRefresh({ quiet: true, delay: 120, force: false });
-      return;
-    }
-
-    if (activeView === "chat" && eventType === "message") {
-      scheduleInboxRefresh();
-    } else {
-      if (eventType === "status" || (eventType === "message" && eventDirection === "outbound")) {
-        scheduleDashboardSummaryRefresh({ quiet: true });
-      }
-    }
-    if (
-      eventConversationId &&
-      selectedConversationId &&
-      eventConversationId === selectedConversationId &&
-      eventType === "message" &&
-      Date.now() > skipConversationRefreshUntil
-    ) {
-      scheduleConversationRefresh(eventConversationId);
-    }
-
-  };
-
-  inboxEventSource.onerror = () => {
-    logActivity("Live stream connection error. Reconnecting in 5 seconds...", "warn");
-    if (inboxEventSource) {
-      inboxEventSource.close();
-      inboxEventSource = null;
-    }
-    if (!inboxReconnectTimer) {
-      inboxReconnectTimer = setTimeout(() => {
-        inboxReconnectTimer = null;
-        startInboxLiveUpdates();
-      }, 5000);
-    }
-  };
-
-  inboxEventSource.onopen = () => {
-    logActivity("Live inbox stream connected.");
-    if (inboxReconnectTimer) {
-      clearTimeout(inboxReconnectTimer);
-      inboxReconnectTimer = null;
-    }
-  };
 }
 
 function renderInbox(conversations) {
