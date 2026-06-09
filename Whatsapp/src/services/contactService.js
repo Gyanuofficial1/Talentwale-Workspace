@@ -14,6 +14,7 @@ const helpers = require("../utils/helpers");
 const cryptoUtils = require("../utils/crypto");
 const { broadcastInboxEvent } = require("../middleware/requestHelpers");
 const nodemailer = require("nodemailer");
+const xlsx = require("xlsx");
 // using built-in fetch
 const net = require("net");
 const dns = require("dns").promises;
