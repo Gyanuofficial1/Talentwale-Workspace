@@ -26,6 +26,14 @@ function requireAuth(req, res, next) {
 
   if (authHeader.startsWith("Bearer ")) {
     token = authHeader.substring(7);
+  } else {
+    // Fallback to query parameter for EventSource (SSE) streams which don't support custom headers
+    try {
+      const parsedUrl = new URL(req.url, "http://localhost");
+      token = parsedUrl.searchParams.get("token") || "";
+    } catch {
+      token = "";
+    }
   }
 
   if (!token) {

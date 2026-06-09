@@ -2325,7 +2325,8 @@ function startInboxLiveUpdates() {
   }
 
   logActivity("Starting live inbox stream...");
-  inboxEventSource = new EventSource("/api/inbox/stream");
+  const token = localStorage.getItem("dashboard_token") || "";
+  inboxEventSource = new EventSource(`/api/inbox/stream?token=${encodeURIComponent(token)}`);
 
   inboxEventSource.onmessage = (event) => {
     let payload = {};
