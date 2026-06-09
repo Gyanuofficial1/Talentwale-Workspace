@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
           loginOverlay.classList.add("is-hidden");
           mainAppLayout.style.display = "flex";
           loginPassword.value = "";
-          
+
           if (typeof window.loadDashboardSummary === 'function') {
             window.loadDashboardSummary();
           }
@@ -419,8 +419,8 @@ function renderReport(payload = {}) {
 
   reportBody.innerHTML = rows.length
     ? rows
-        .map(
-          (row) => `
+      .map(
+        (row) => `
             <tr>
               <td>${escapeHtml(formatTime(row.timestamp))}</td>
               <td>${escapeHtml(row.participant || row.replyTo || "-")}</td>
@@ -429,8 +429,8 @@ function renderReport(payload = {}) {
               <td title="${escapeHtml(row.statusDetails || "")}">${escapeHtml(row.statusDetails || "-")}</td>
             </tr>
           `,
-        )
-        .join("")
+      )
+      .join("")
     : `<tr><td colspan="5" class="report-empty-cell">No outbound report data yet.</td></tr>`;
 }
 
@@ -586,11 +586,11 @@ function switchView(viewName) {
         ? "Config Center"
         : isAnalytics
           ? "Email Engagement Analytics"
-        : isBulk
-          ? "Bulk Send"
-          : isSmtp
-            ? "Email Campaign"
-            : "Quick Send";
+          : isBulk
+            ? "Bulk Send"
+            : isSmtp
+              ? "Email Campaign"
+              : "Quick Send";
   }
 
   viewTabs.forEach((tab) => {
@@ -602,11 +602,11 @@ function switchView(viewName) {
   updateDashboardStatLabels(isSmtp ? "smtp" : isBulk ? "bulk" : "quick");
 
   if (isChat && selectedConversationId) {
-    loadConversation(selectedConversationId, false, { markRead: false, quiet: true }).catch(() => {});
+    loadConversation(selectedConversationId, false, { markRead: false, quiet: true }).catch(() => { });
   }
 
   if (isChat && !inboxConversations.length) {
-    loadInbox({ quiet: true }).catch(() => {});
+    loadInbox({ quiet: true }).catch(() => { });
   }
 
   if (isQuick) {
@@ -619,14 +619,14 @@ function switchView(viewName) {
 
   if (isSmtp) {
     renderSmtpDashboardStats();
-    fetchSmtpLiveSummary({ quiet: true }).catch(() => {});
+    fetchSmtpLiveSummary({ quiet: true }).catch(() => { });
   } else {
     stopSmtpLiveSummaryPolling();
     closeSmtpPreviewModal();
   }
 
   if (isAnalytics) {
-    fetchSmtpLiveSummary({ quiet: true }).catch(() => {});
+    fetchSmtpLiveSummary({ quiet: true }).catch(() => { });
     scheduleSmtpAnalyticsRefresh({ quiet: true, force: true, delay: 50 });
   } else {
     stopSmtpAnalyticsRefreshPolling();
@@ -634,7 +634,7 @@ function switchView(viewName) {
 
   if (isBulk) {
     renderWhatsappDashboardStats();
-    fetchWhatsappLiveSummary({ quiet: true }).catch(() => {});
+    fetchWhatsappLiveSummary({ quiet: true }).catch(() => { });
   } else {
     stopWhatsappLiveSummaryPolling();
   }
@@ -846,8 +846,8 @@ function renderSmtpAnalyticsEventFeed() {
             </td>
             <td>
               ${targetUrl
-                ? `<a href="${escapeHtml(targetUrl)}" class="smtp-event-link" target="_blank" rel="noopener noreferrer">${escapeHtml(targetUrl)}</a>`
-                : `<span class="smtp-event-link-empty">-</span>`}
+            ? `<a href="${escapeHtml(targetUrl)}" class="smtp-event-link" target="_blank" rel="noopener noreferrer">${escapeHtml(targetUrl)}</a>`
+            : `<span class="smtp-event-link-empty">-</span>`}
             </td>
             <td><span class="smtp-event-count">${escapeHtml(countLabel)}</span></td>
           </tr>
@@ -947,23 +947,23 @@ function renderSmtpAnalytics(payload = {}, options = {}) {
   if (smtpAnalyticsTopLinks) {
     smtpAnalyticsTopLinks.innerHTML = topLinks.length
       ? topLinks
-          .map(
-            (item) => `
+        .map(
+          (item) => `
               <li>
                 <a href="${escapeHtml(item.url || "")}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.url || "-")}</a>
                 <span>${Number(item.clicks || 0)} clicks</span>
               </li>
             `,
-          )
-          .join("")
+        )
+        .join("")
       : `<li class="smtp-top-links-empty">No click data yet.</li>`;
   }
 
   if (smtpAnalyticsRecipientsBody) {
     smtpAnalyticsRecipientsBody.innerHTML = recipients.length
       ? recipients
-          .map(
-            (item) => `
+        .map(
+          (item) => `
               <tr>
                 <td title="${escapeHtml(item.recipient || "")}">${escapeHtml(item.recipient || "-")}</td>
                 <td>${Number(item.sent || 0)}</td>
@@ -973,8 +973,8 @@ function renderSmtpAnalytics(payload = {}, options = {}) {
                 <td>${formatPercentage(item.clickRate || 0)}</td>
               </tr>
             `,
-          )
-          .join("")
+        )
+        .join("")
       : `<tr><td colspan="6" class="report-empty-cell">Recipient engagement data is not available yet.</td></tr>`;
   }
 
@@ -1960,12 +1960,12 @@ function renderSmtpPreview() {
 
   smtpPreviewBody.innerHTML = smtpAudienceRows.length
     ? smtpAudienceRows
-        .slice(0, 8)
-        .map(
-          (row) =>
-            `<tr>${visibleColumns.map((column) => `<td>${escapeHtml(row[column] ?? "")}</td>`).join("")}</tr>`,
-        )
-        .join("")
+      .slice(0, 8)
+      .map(
+        (row) =>
+          `<tr>${visibleColumns.map((column) => `<td>${escapeHtml(row[column] ?? "")}</td>`).join("")}</tr>`,
+      )
+      .join("")
     : `<tr><td colspan="6" class="report-empty-cell">No SMTP data preview yet.</td></tr>`;
 }
 
@@ -2005,8 +2005,8 @@ function renderSmtpProviderOptions(selectedValue = "") {
 
   smtpProvider.innerHTML = smtpProviderOptions.length
     ? smtpProviderOptions
-        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value.toUpperCase())}</option>`)
-        .join("")
+      .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value.toUpperCase())}</option>`)
+      .join("")
     : `<option value="">No SMTP provider configured</option>`;
 
   const resolved = String(selectedValue || "").trim().toLowerCase();
@@ -2028,8 +2028,8 @@ function renderSmtpFromOptions(selectedValue = "") {
 
   smtpFromAddress.innerHTML = options.length
     ? options
-        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
-        .join("")
+      .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+      .join("")
     : `<option value="">No sender configured</option>`;
 
   if (selectedValue && options.includes(selectedValue)) {
@@ -2215,9 +2215,8 @@ function renderSmtpCredentialList() {
             <div class="smtp-cred-actions">
               <button type="button" class="btn-text" data-action="edit" data-id="${escapeHtml(item.id || "")}">Edit</button>
               <button type="button" class="btn-text" data-action="activate" data-id="${escapeHtml(item.id || "")}">Set Active</button>
-              <button type="button" class="btn-text" data-action="make-default" data-id="${escapeHtml(item.id || "")}" data-provider="${escapeHtml(provider)}" ${
-                makeDefaultDisabled ? "disabled" : ""
-              }>Make Default</button>
+              <button type="button" class="btn-text" data-action="make-default" data-id="${escapeHtml(item.id || "")}" data-provider="${escapeHtml(provider)}" ${makeDefaultDisabled ? "disabled" : ""
+        }>Make Default</button>
               <button type="button" class="btn-text text-danger" data-action="delete" data-id="${escapeHtml(item.id || "")}">Delete</button>
             </div>
           </td>
@@ -2327,11 +2326,10 @@ function renderInbox(conversations) {
     inboxList.innerHTML = `
       <div class="chat-empty">
         <strong>${hasSearch ? "No match found" : "No replies yet"}</strong>
-        <span>${
-          hasSearch
-            ? `No chats found for \"${escapeHtml(inboxSearchQuery)}\".`
-            : "Incoming WhatsApp replies will appear here."
-        }</span>
+        <span>${hasSearch
+        ? `No chats found for \"${escapeHtml(inboxSearchQuery)}\".`
+        : "Incoming WhatsApp replies will appear here."
+      }</span>
       </div>
     `;
     if (!selectedConversationId && !hasSearch) {
@@ -2408,11 +2406,10 @@ function renderThread(messages) {
               <span>${escapeHtml(formatChatTime(message.timestamp))}</span>
               ${status}
             </div>
-            ${
-              isOutbound && message.statusDetails
-                ? `<span class="msg-status-detail">${escapeHtml(message.statusDetails)}</span>`
-                : ""
-            }
+            ${isOutbound && message.statusDetails
+          ? `<span class="msg-status-detail">${escapeHtml(message.statusDetails)}</span>`
+          : ""
+        }
           </div>
         </div>
       `;
@@ -2701,7 +2698,7 @@ if (chatSearchInput) {
     }
     inboxSearchDebounceTimer = setTimeout(() => {
       inboxLoadingMore = false;
-      loadInbox({ quiet: true, query: inboxSearchQuery }).catch(() => {});
+      loadInbox({ quiet: true, query: inboxSearchQuery }).catch(() => { });
     }, 1000);
   });
 }
