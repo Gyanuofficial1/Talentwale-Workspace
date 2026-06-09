@@ -23,7 +23,7 @@ const crypto = require("crypto");
 
 function getSqsEmailQueueConfig() {
   const queueUrl = String(process.env.AWS_SQS_QUEUE_URL || "").trim();
-  const region = String(process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "ap-south-1").trim();
+  const region = String(process.env.AWS_SQS_REGION || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "ap-south-1").trim();
 
   return {
     enabled: Boolean(queueUrl),
@@ -44,7 +44,20 @@ async function initSqsEmailQueue() {
     return;
   }
 
-  const sqsClient = new SQSClient({ region: config.region });
+  // Create configuration object for SQSClient
+  const clientConfig = { region: config.region };
+
+  // Use custom non-reserved env keys if provided (useful to avoid AWS Lambda Reserved Keys conflict)
+  const accessKeyId = process.env.AWS_SQS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SQS_SECRET_ACCESS_KEY;
+  if (accessKeyId && secretAccessKey) {
+    clientConfig.credentials = {
+      accessKeyId: String(accessKeyId).trim(),
+      secretAccessKey: String(secretAccessKey).trim(),
+    };
+  }
+
+  const sqsClient = new SQSClient(clientConfig);
 
   // Validate the SQS Queue URL actually exists and is accessible
   try {
