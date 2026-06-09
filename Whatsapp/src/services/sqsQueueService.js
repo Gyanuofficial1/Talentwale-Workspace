@@ -13,12 +13,13 @@ const { getPool, ensureDbAvailable } = require("../config/database");
 const helpers = require("../utils/helpers");
 const cryptoUtils = require("../utils/crypto");
 const { broadcastInboxEvent } = require("../middleware/requestHelpers");
-const { SQSClient, SendMessageBatchCommand, GetQueueAttributesCommand } = require("@aws-sdk/client-sqs");
+const { SQSClient, SendMessageBatchCommand, GetQueueAttributesCommand, ReceiveMessageCommand, DeleteMessageCommand } = require("@aws-sdk/client-sqs");
 const nodemailer = require("nodemailer");
 // using built-in fetch
 const net = require("net");
 const dns = require("dns").promises;
 const crypto = require("crypto");
+let emailQueueLastSentAt = 0;
 
 
 function getSqsEmailQueueConfig() {
@@ -75,6 +76,49 @@ async function initSqsEmailQueue() {
   emailQueueRuntime.queueClient = sqsClient;
   emailQueueRuntime.queueUrl = config.queueUrl;
   console.log(`AWS SQS Email Queue verified and enabled: ${config.queueUrl}`);
+
+  if (process.env.IS_LAMBDA !== "true") {
+    startSqsLocalConsumer();
+  }
+}
+
+async function startSqsLocalConsumer() {
+  console.log("[Local SQS Consumer] Starting polling loop...");
+
+  while (emailQueueRuntime.enabled && emailQueueRuntime.queueClient) {
+    try {
+      const receiveParams = {
+        QueueUrl: emailQueueRuntime.queueUrl,
+        MaxNumberOfMessages: 5,
+        WaitTimeSeconds: 10,
+        AttributeNames: ["ApproximateReceiveCount"]
+      };
+
+      const response = await emailQueueRuntime.queueClient.send(new ReceiveMessageCommand(receiveParams));
+      const messages = response.Messages || [];
+
+      for (const message of messages) {
+        try {
+          const payload = JSON.parse(message.Body || "{}");
+          const dequeueCount = Number(message.Attributes?.ApproximateReceiveCount || 1);
+
+          const result = await processQueuedEmailTask(payload, { dequeueCount });
+
+          if (result && result.action !== "retry") {
+            await emailQueueRuntime.queueClient.send(new DeleteMessageCommand({
+              QueueUrl: emailQueueRuntime.queueUrl,
+              ReceiptHandle: message.ReceiptHandle
+            }));
+          }
+        } catch (msgErr) {
+          console.error("[Local SQS Consumer] Error processing message:", msgErr.message);
+        }
+      }
+    } catch (pollErr) {
+      console.error("[Local SQS Consumer] Polling error:", pollErr.message);
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
 }
 
 async function getEmailQueueSmtpContext(provider) {
