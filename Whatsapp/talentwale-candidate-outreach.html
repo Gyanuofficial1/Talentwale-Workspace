@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>TalentWale – Your Profile Qualifies for Active Openings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    .brand-chip-label { display: inline-block; }
+    .brand-chip-label + .brand-chip-label { margin-left: 3px; }
+
+    /* ─── Mobile Overrides ─────────────────────────── */
+    @media only screen and (max-width: 600px) {
+      .outer-wrap    { padding: 5px 5px 0 !important; }
+      .email-card    { border-radius: 14px !important; width: 100% !important; max-width: 100% !important; }
+      .header-pad    { padding: 20px 16px 24px !important; }
+      .header-h1     { font-size: 20px !important; }
+      .headline-br   { display: none !important; }
+      .content-pad   { padding: 24px 20px !important; }
+      .bottom-pad    { padding: 0 20px 24px !important; }
+      .profile-wrap  { padding: 10px 20px 0 !important; }
+      .app-wrap      { padding: 0 20px 24px !important; }
+      .divider-pad   { padding: 0 20px !important; }
+      .sig-wrap      { padding: 22px 20px !important; }
+      .footer-pad    { padding: 14px 20px !important; }
+      .shortlist-grid,
+      .shortlist-grid tbody,
+      .shortlist-grid tr { display: block !important; width: 100% !important; }
+      .match-cell    { display: block !important; width: 100% !important; }
+      .match-gap     { display: block !important; width: 100% !important; height: 8px !important; line-height: 8px !important; font-size: 0 !important; }
+      .app-cell      { display: table-cell !important; width: 50% !important; text-align: center !important; padding: 4px !important; vertical-align: middle !important; }
+      .app-badge     { width: 112px !important; max-width: 112px !important; }
+      .btn-full      { display: block !important; width: 100% !important; }
+      .btn-full tbody,
+      .btn-full tr,
+      .btn-full td   { display: block !important; width: 100% !important; }
+      .btn-full a    { display: block !important; width: 100% !important; padding: 14px 16px !important; font-size: 14px !important; line-height: 1.3 !important; text-align: center !important; }
+      .cta-primary-link { font-size: 15px !important; font-weight: 800 !important; }
+      .cta-secondary-link { font-size: 14px !important; font-weight: 700 !important; }
+      .cta-note-box  { padding: 10px 12px !important; }
+      .cta-note-title { font-size: 12px !important; line-height: 1.3 !important; margin-bottom: 4px !important; }
+      .cta-note-text { font-size: 11px !important; line-height: 1.4 !important; }
+      .perk-pad      { padding: 14px !important; }
+      .perk-title    { font-size: 11px !important; letter-spacing: 0.6px !important; line-height: 1.4 !important; margin-bottom: 10px !important; }
+      .perk-item     { font-size: 13px !important; line-height: 1.6 !important; padding: 5px 0 !important; }
+      .perk-bullet-arrow { width: 14px !important; }
+      .perk-bullet-text  { font-size: 13px !important; line-height: 1.6 !important; }
+      .sig-img-td    { padding-right: 12px !important; width: 72px !important; }
+      .sig-logo      { width: 66px !important; height: 66px !important; }
+      .sig-div-td    { display: table-cell !important; width: 1px !important; padding-right: 12px !important; }
+      .sig-div-line  { display: block !important; height: 72px !important; }
+      .brand-row     { table-layout: fixed !important; }
+      .brand-logo-link { padding: 6px 8px !important; border-radius: 9px !important; }
+      .brand-logo-img  { width: 134px !important; max-width: 134px !important; }
+      .brand-tagline   { margin-top: 8px !important; font-size: 10px !important; letter-spacing: 0.7px !important; }
+      .brand-left    { display: table-cell !important; width: 68% !important; vertical-align: middle !important; }
+      .brand-right   { display: table-cell !important; width: 32% !important; text-align: right !important; vertical-align: middle !important; padding-top: 0 !important; padding-left: 8px !important; }
+      .brand-chip    { display: inline-block !important; min-width: 110px !important; text-align: center !important; padding: 7px 12px !important; border-radius: 20px !important; }
+      .brand-chip span { font-size: 11px !important; letter-spacing: 0.2px !important; }
+      .brand-chip-label { display: block !important; line-height: 1.15 !important; }
+      .brand-chip-label + .brand-chip-label { margin-left: 0 !important; margin-top: 2px !important; }
+    }
+
+    @media only screen and (max-width: 320px) {
+      .header-pad      { padding: 18px 12px 22px !important; }
+      .brand-logo-link { padding: 5px 7px !important; border-radius: 8px !important; }
+      .brand-logo-img  { width: 120px !important; max-width: 120px !important; }
+      .brand-tagline   { margin-top: 6px !important; font-size: 9px !important; letter-spacing: 0.5px !important; }
+      .brand-left      { display: table-cell !important; width: 64% !important; }
+      .brand-right     { display: table-cell !important; width: 36% !important; text-align: right !important; padding-top: 0 !important; }
+      .brand-chip      { min-width: 94px !important; padding: 5px 8px !important; border-radius: 16px !important; }
+      .brand-chip span { font-size: 10px !important; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root { color-scheme: light !important; }
+
+      body,
+      .outer-wrap { background-color: #edf2f7 !important; }
+
+      .email-card { background: #ffffff !important; box-shadow: 0 6px 30px rgba(0,0,0,0.09) !important; }
+
+      .shortlist-box { background: #ffffff !important; border-color: #dbeafe !important; }
+      .shortlist-head { background: #eff6ff !important; border-bottom-color: #dbeafe !important; }
+      .perk-box { background: #f7fbff !important; border-color: #bfdbfe !important; }
+      .cta-note-box,
+      .app-box,
+      .footer-pad { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+
+      .divider-pad hr,
+      .sig-div-line { border-top-color: #e2e8f0 !important; background: #e2e8f0 !important; }
+      .match-cell { border-color: #e2e8f0 !important; }
+
+      .content-pad p,
+      .content-pad td,
+      .profile-wrap td,
+      .profile-wrap span,
+      .app-wrap p,
+      .sig-wrap td,
+      .sig-wrap div,
+      .sig-wrap a,
+      .footer-pad p,
+      .footer-pad strong,
+      .cta-note-title,
+      .cta-note-text,
+      .perk-item,
+      .perk-bullet-text { color: #334155 !important; }
+
+      .perk-title,
+      .content-pad a,
+      .sig-wrap a[href*="talentwale.com"] { color: #1d4ed8 !important; }
+
+      .perk-bullet-arrow { color: #2563eb !important; }
+      .footer-pad a { color: #94a3b8 !important; }
+    }
+
+    [data-ogsc] body,
+    [data-ogsb] body,
+    [data-ogsc] .outer-wrap,
+    [data-ogsb] .outer-wrap { background-color: #edf2f7 !important; }
+
+    [data-ogsc] .email-card,
+    [data-ogsb] .email-card { background: #ffffff !important; }
+
+    [data-ogsc] .shortlist-box,
+    [data-ogsb] .shortlist-box { background: #ffffff !important; border-color: #dbeafe !important; }
+
+    [data-ogsc] .perk-box,
+    [data-ogsb] .perk-box,
+    [data-ogsc] .cta-note-box,
+    [data-ogsb] .cta-note-box,
+    [data-ogsc] .app-box,
+    [data-ogsb] .app-box,
+    [data-ogsc] .footer-pad,
+    [data-ogsb] .footer-pad { background: #f8fafc !important; border-color: #e2e8f0 !important; }
+  </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#edf2f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%;mso-line-height-rule:exactly;">
+
+  <table class="outer-wrap" width="100%" cellpadding="0" cellspacing="0" role="presentation"
+         style="background-color:#edf2f7;padding:28px 16px;">
+    <tr>
+      <td align="center">
+
+        <table class="email-card" width="620" cellpadding="0" cellspacing="0" role="presentation"
+               style="background:#ffffff;border-radius:16px;max-width:620px;width:100%;
+                      box-shadow:0 6px 30px rgba(0,0,0,0.09);overflow:hidden;">
+
+          <tr>
+            <td class="header-pad" bgcolor="#1e3a8a"
+                style="background: linear-gradient(135deg,#0f2460 0%,#1e40af 55%,#2563eb 100%);
+                       padding:32px 40px 36px;">
+
+              <table class="brand-row" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td class="brand-left" style="vertical-align:middle;">
+                    <table cellpadding="0" cellspacing="0" role="presentation">
+                      <tr>
+                        <td style="vertical-align:middle;">
+                          <a class="brand-logo-link" href="https://talentwale.com/" target="_blank"
+                             style="display:inline-block;text-decoration:none;background:rgba(255,255,255,0.9);
+                                    padding:7px 11px;border-radius:9px;border:1px solid rgba(255,255,255,0.6);">
+                            <img class="brand-logo-img" src="https://talentwale.com/assets/images/talentwale-logo.svg"
+                                 alt="TalentWale" width="170"
+                                 style="display:block;border:none;max-width:170px;height:auto;" />
+                          </a>
+                          <div class="brand-tagline" style="font-size:11px;color:rgba(255,255,255,0.72);margin-top:6px;letter-spacing:0.8px;text-transform:uppercase;">India's Smarter Hiring Platform</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td class="brand-right" align="right" style="vertical-align:middle;">
+                    <div class="brand-chip" style="display:inline-block;background:rgba(255,255,255,0.15);
+                                border:1px solid rgba(255,255,255,0.3);border-radius:20px;
+                                padding:6px 14px;">
+                      <span class="brand-chip-label" style="font-size:12px;color:#ffffff;font-weight:700;letter-spacing:0.3px;">Profile</span>
+                      <span class="brand-chip-label" style="font-size:12px;color:#ffffff;font-weight:700;letter-spacing:0.3px;">Matched ✓</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <h1 class="header-h1"
+                  style="margin:22px 0 0 0;font-size:23px;font-weight:800;color:#ffffff;
+                         line-height:1.35;letter-spacing:-0.4px;">
+                We found openings that match your<br class="headline-br"/>
+                profile, {{salutation}} {{Name}} 👋
+              </h1>
+              <p style="margin:10px 0 0 0;font-size:14px;color:rgba(255,255,255,0.78);line-height:1.55;">
+                Your background in <strong style="color:#93c5fd;">{{industry}}</strong> is in active demand.
+                Here's how to get in front of the right employers — for free.
+              </p>
+
+            </td>
+          </tr>
+          <tr>
+                 <td class="profile-wrap" style="padding:14px 32px 0;">
+              <table class="shortlist-box" width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                style="margin-top:0;background:#ffffff;border:1.5px solid #dbeafe;
+                  border-radius:14px;box-shadow:0 3px 12px rgba(37,99,235,0.09);overflow:hidden;">
+
+                <tr>
+                    <td class="shortlist-head" colspan="3"
+                      style="background:#eff6ff;padding:11px 16px;border-bottom:1px solid #dbeafe;">
+                    <span style="font-size:11px;color:#1d4ed8;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+                      ◆ Your Shortlisted Profile
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="padding:12px;">
+                    <table class="shortlist-grid" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;border-spacing:0;">
+                      <tr>
+                        <td class="match-cell" width="33.33%"
+                            style="padding:14px 14px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;vertical-align:top;">
+                          <div style="font-size:10px;color:#94a3b8;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:5px;">Industry</div>
+                          <div style="font-size:13px;font-weight:700;color:#0f172a;line-height:1.4;">{{industry}}</div>
+                        </td>
+                        <td class="match-gap" width="8" style="width:8px;font-size:0;line-height:0;">&nbsp;</td>
+                        <td class="match-cell" width="33.33%"
+                            style="padding:14px 14px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;vertical-align:top;">
+                          <div style="font-size:10px;color:#94a3b8;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:5px;">Career Level</div>
+                          <div style="font-size:13px;font-weight:700;color:#0f172a;line-height:1.4;">{{level}}</div>
+                        </td>
+                        <td class="match-gap" width="8" style="width:8px;font-size:0;line-height:0;">&nbsp;</td>
+                        <td class="match-cell" width="33.34%"
+                            style="padding:14px 14px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;vertical-align:top;">
+                          <div style="font-size:10px;color:#94a3b8;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:5px;">Preferred Location</div>
+                          <div style="font-size:13px;font-weight:700;color:#0f172a;line-height:1.4;">{{preferred_location}}</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="content-pad" style="padding:28px 40px 0;">
+
+              <p style="margin:0 0 18px 0;font-size:15px;color:#334155;line-height:1.65;">
+                <strong>TalentWale</strong> is a recruitment platform that directly connects verified professionals with hiring teams — no middlemen, no delays. We've identified your profile as a relevant match for roles currently being filled in <strong>{{preferred_location}}</strong>.
+              </p>
+
+              <table class="perk-box" width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                     style="background:#f7fbff;border:1px solid #bfdbfe;border-radius:10px;
+                            margin-bottom:22px;overflow:hidden;">
+                <tr>
+                  <td class="perk-pad" style="padding:16px 20px;">
+                    <p class="perk-title" style="font-size:12px;font-weight:700;color:#1d4ed8;margin:0 0 12px 0;
+                               letter-spacing:0.8px;text-transform:uppercase;">
+                      ✦ &nbsp;Your Free TalentWale Profile Gets You:
+                    </p>
+                    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                      <tr>
+                        <td class="perk-item" style="padding:4px 0;font-size:14px;color:#1e3a5f;line-height:1.5;">
+                          <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td class="perk-bullet-arrow" width="16" valign="top"
+                                  style="width:16px;color:#2563eb;font-weight:800;font-size:14px;line-height:1.5;">→</td>
+                              <td class="perk-bullet-text" valign="top"
+                                  style="font-size:14px;color:#1e3a5f;line-height:1.5;">
+                                Direct visibility with <strong>500+ verified employers</strong> in {{preferred_location}}
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="perk-item" style="padding:4px 0;font-size:14px;color:#1e3a5f;line-height:1.5;">
+                          <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td class="perk-bullet-arrow" width="16" valign="top"
+                                  style="width:16px;color:#2563eb;font-weight:800;font-size:14px;line-height:1.5;">→</td>
+                              <td class="perk-bullet-text" valign="top"
+                                  style="font-size:14px;color:#1e3a5f;line-height:1.5;">
+                                Smart job matching based on your <strong>{{industry}}</strong> background
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="perk-item" style="padding:4px 0;font-size:14px;color:#1e3a5f;line-height:1.5;">
+                          <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td class="perk-bullet-arrow" width="16" valign="top"
+                                  style="width:16px;color:#2563eb;font-weight:800;font-size:14px;line-height:1.5;">→</td>
+                              <td class="perk-bullet-text" valign="top"
+                                  style="font-size:14px;color:#1e3a5f;line-height:1.5;">
+                                Real-time status updates via the <strong>TalentWale app</strong>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="perk-item" style="padding:4px 0;font-size:14px;color:#1e3a5f;line-height:1.5;">
+                          <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                            <tr>
+                              <td class="perk-bullet-arrow" width="16" valign="top"
+                                  style="width:16px;color:#2563eb;font-weight:800;font-size:14px;line-height:1.5;">→</td>
+                              <td class="perk-bullet-text" valign="top"
+                                  style="font-size:14px;color:#1e3a5f;line-height:1.5;">
+                                <strong>100% free</strong> for candidates — always
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 26px 0;font-size:15px;color:#475569;line-height:1.65;">
+                Candidates in <strong>{{city}}</strong> with a similar background have already been placed through TalentWale. Choose the quickest way to get started:
+              </p>
+
+            </td>
+          </tr>
+          <tr>
+            <td class="bottom-pad" style="padding:0 40px 32px;">
+
+              <table class="btn-full" width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                     style="margin-bottom:12px;">
+                <tr>
+                  <td bgcolor="#1e40af" style="border-radius:9px;text-align:center;">
+                    <a href="https://talentwale.com/login"
+                       class="cta-primary-link"
+                       target="_blank"
+                       style="display:block;padding:16px 24px;color:#ffffff;text-decoration:none;
+                              font-size:16px;font-weight:800;letter-spacing:0.2px;line-height:1.3;">
+                      🚀 &nbsp; Create My Free Profile (Recommended)
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <table class="btn-full" width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                     style="margin-bottom:16px;">
+                <tr>
+                  <td bgcolor="#15803d" style="border-radius:9px;text-align:center;">
+                    <a href="https://wa.me/918989896688?text=Hi%20TalentWale%2C%20I%20am%20{{Name}}%20from%20{{city}}.%20I%20have%20experience%20in%20{{industry}}%20and%20I%20am%20open%20to%20opportunities%20in%20{{preferred_location}}.%20Please%20help%20me%20register."
+                       class="cta-secondary-link"
+                       target="_blank"
+                       style="display:block;padding:15px 24px;color:#ffffff;text-decoration:none;
+                              font-size:15px;font-weight:700;letter-spacing:0.2px;line-height:1.3;">
+                      💬 &nbsp; Send My CV via WhatsApp
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <div class="cta-note-box" style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:9px;
+                          padding:14px 16px;text-align:center;">
+                <p class="cta-note-title" style="font-size:13px;font-weight:700;color:#334155;margin:0 0 4px 0;">
+                  Reply to this email with your updated CV
+                </p>
+                <p class="cta-note-text" style="font-size:12px;color:#64748b;margin:0;line-height:1.45;">
+                  We will create your profile and share matching jobs.
+                </p>
+              </div>
+
+            </td>
+          </tr>
+          <tr>
+            <td class="app-wrap" style="padding:0 40px 32px;">
+              <div class="app-box" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;
+                          padding:18px 20px;text-align:center;">
+                <p style="margin:0 0 14px 0;font-size:13px;font-weight:700;color:#334155;
+                           letter-spacing:0.3px;">
+                  📱 &nbsp;Track Your Application Status Live on the App
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                  <tr>
+                    <td class="app-cell" width="50%" align="center" style="padding-right:8px;">
+                      <a href="https://play.google.com/store/apps/details?id=com.talentwale.jobseeker"
+                         target="_blank" style="display:inline-block;text-decoration:none;">
+                            <img class="app-badge" src="https://talentwale.com/assets/images/playStore.svg"
+                             alt="Get it on Google Play" width="140"
+                             style="display:block;border:none;max-width:140px;height:auto;" />
+                      </a>
+                    </td>
+                    <td class="app-cell" width="50%" align="center" style="padding-left:8px;">
+                      <a href="https://apps.apple.com/in/app/talentwale-candidate/id6752120066"
+                         target="_blank" style="display:inline-block;text-decoration:none;">
+                            <img class="app-badge" src="https://talentwale.com/assets/images/appStore.svg"
+                             alt="Download on the App Store" width="140"
+                             style="display:block;border:none;max-width:140px;height:auto;" />
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="divider-pad" style="padding:0 40px;">
+              <hr style="border:none;border-top:1px solid #e2e8f0;margin:0;" />
+            </td>
+          </tr>
+
+          <tr>
+            <td class="sig-wrap" style="padding:24px 40px;">
+              <table cellpadding="0" cellspacing="0" border="0"
+                     style="font-family:Arial,Helvetica,sans-serif;color:#333333;">
+                <tbody>
+                  <tr>
+                    <td colspan="3" style="padding-bottom:4px;">
+                      <div style="font-size:13px;color:#64748b;">Thanks &amp; Regards,</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="3" style="padding-bottom:16px;">
+                      <div style="font-size:20px;font-weight:800;color:#1e3a8a;letter-spacing:-0.3px;">
+                        Team Talentwale
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="sig-img-td" style="vertical-align:middle;padding-right:16px;width:62px;">
+                      <a href="https://talentwale.com/" target="_blank" style="display:inline-block;text-decoration:none;">
+                        <img class="sig-logo" src="https://talentwale.com/signature/talentwale-logo.jpg"
+                             alt="TalentWale" width="88" height="88"
+                             style="display:block;border-radius:50%;border:2px solid #e2e8f0;" />
+                      </a>
+                    </td>
+                    <td class="sig-div-td" style="vertical-align:middle;padding-right:16px;">
+                      <div class="sig-div-line" style="height:80px;width:1px;background:#e2e8f0;"></div>
+                    </td>
+                    <td style="vertical-align:middle;">
+                      <table cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td style="font-size:13px;color:#334155;padding-bottom:5px;">
+                            📞 <a href="tel:+918989896688"
+                                  style="color:#334155;text-decoration:none;">+91-89 89 89 66 88</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="font-size:13px;color:#334155;padding-bottom:5px;">
+                            <a href="mailto:helpdesk@talentwale.com"
+                               style="color:#334155;text-decoration:none;">helpdesk@talentwale.com</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="font-size:13px;padding-bottom:12px;">
+                            <a href="https://talentwale.com/" target="_blank"
+                               style="color:#1d4ed8;text-decoration:none;font-weight:700;">talentwale.com</a>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>
+                            <table cellpadding="0" cellspacing="0" border="0">
+                              <tr>
+                                <td style="padding-right:8px;">
+                                  <a href="https://www.linkedin.com/company/talentwale/" target="_blank">
+                                    <img src="https://talentwale.com/signature/linkedin.png"
+                                         width="22" height="22" alt="LinkedIn"
+                                         style="display:block;" />
+                                  </a>
+                                </td>
+                                <td style="padding-right:8px;">
+                                  <a href="https://www.instagram.com/talentwale.official/" target="_blank">
+                                    <img src="https://talentwale.com/signature/instagram.png"
+                                         width="22" height="22" alt="Instagram"
+                                         style="display:block;" />
+                                  </a>
+                                </td>
+                                <td style="padding-right:8px;">
+                                  <a href="https://www.facebook.com/talentwale.official" target="_blank">
+                                    <img src="https://talentwale.com/signature/facebook.png"
+                                         width="22" height="22" alt="Facebook"
+                                         style="display:block;" />
+                                  </a>
+                                </td>
+                                <td>
+                                  <a href="https://www.youtube.com/@TalentwaleOfficial" target="_blank">
+                                    <img src="https://talentwale.com/signature/youtube.png"
+                                         width="22" height="22" alt="YouTube"
+                                         style="display:block;" />
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="footer-pad" style="background:#f8fafc;padding:16px 40px;border-top:1px solid #e2e8f0;">
+              <p style="font-size:11px;color:#94a3b8;line-height:1.6;margin:0;text-align:center;">
+                This email was sent to <strong>{{Email}}</strong> as your profile matches our active talent pool criteria.<br/>
+                We do not charge candidates. TalentWale is free for job seekers, always.<br/>
+                Not looking for a job right now?
+                <a href="{{unsubscribe_url}}" style="color:#94a3b8;text-decoration:underline;">Unsubscribe securely</a>.
+              </p>
+            </td>
+          </tr>
+
+  </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
