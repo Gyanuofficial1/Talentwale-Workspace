@@ -442,14 +442,31 @@ function getSmtpCredentialCipherKey() {
 
   const seed = String(
     process.env.SMTP_PROFILE_SECRET ||
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.COMMUNICATION_SERVICES_CONNECTION_STRING ||
-      process.env.SUPABASE_DB_PASSWORD ||
-      "local-dev-smtp-key",
+      "talentwale-fixed-smtp-secret-key-12345"
   ).trim();
 
   smtpCredentialCipherKeyCache = crypto.createHash("sha256").update(seed).digest();
   return smtpCredentialCipherKeyCache;
+}
+
+function getPossibleSeeds() {
+  const seeds = [];
+  if (process.env.SMTP_PROFILE_SECRET) seeds.push(process.env.SMTP_PROFILE_SECRET);
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) seeds.push(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  if (process.env.COMMUNICATION_SERVICES_CONNECTION_STRING) seeds.push(process.env.COMMUNICATION_SERVICES_CONNECTION_STRING);
+  if (process.env.SUPABASE_DB_PASSWORD) seeds.push(process.env.SUPABASE_DB_PASSWORD);
+  seeds.push("talentwale-fixed-smtp-secret-key-12345");
+  seeds.push("local-dev-smtp-key");
+  
+  // Clean, trim and filter out duplicates
+  const unique = [];
+  for (const s of seeds) {
+    const trimmed = String(s || "").trim();
+    if (trimmed && !unique.includes(trimmed)) {
+      unique.push(trimmed);
+    }
+  }
+  return unique;
 }
 
 function encryptSmtpCredentialSecret(value) {
@@ -466,7 +483,7 @@ function encryptSmtpCredentialSecret(value) {
 }
 
 function decryptSmtpCredentialSecret(value) {
-  const raw = String(value || "");
+  const raw = String(value || "").trim();
   if (!raw) {
     return "";
   }
@@ -482,9 +499,21 @@ function decryptSmtpCredentialSecret(value) {
   const iv = Buffer.from(parts[1], "base64");
   const tag = Buffer.from(parts[2], "base64");
   const encrypted = Buffer.from(parts[3], "base64");
-  const decipher = crypto.createDecipheriv("aes-256-gcm", getSmtpCredentialCipherKey(), iv);
-  decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
+
+  const seeds = getPossibleSeeds();
+  for (const seed of seeds) {
+    try {
+      const key = crypto.createHash("sha256").update(seed).digest();
+      const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+      decipher.setAuthTag(tag);
+      const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
+      return decrypted;
+    } catch (e) {
+      // Try next seed
+    }
+  }
+
+  throw new Error("Failed to decrypt SMTP credential secret with all available keys.");
 }
 
 function normalizeSmtpFromOptionsRaw(rawOptions, fallbackFrom) {
