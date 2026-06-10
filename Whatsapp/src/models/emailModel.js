@@ -303,7 +303,15 @@ async function logEmailEngagementEvent(entry = {}) {
           ip_address,
           created_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+        SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW()
+        WHERE NOT EXISTS (
+          SELECT 1 FROM email_engagement_events
+          WHERE campaign_id = $1
+            AND recipient = $2
+            AND event_type = $3
+            AND COALESCE(target_url, '') = COALESCE($4, '')
+            AND created_at > NOW() - INTERVAL '10 seconds'
+        )
       `,
       [
         campaignId,
