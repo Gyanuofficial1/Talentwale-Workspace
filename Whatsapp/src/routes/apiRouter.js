@@ -141,7 +141,7 @@ async function handleApi(req, res) {
     try {
       if (!token) throw new Error("Missing token.");
       const payload = cryptoUtils.parseUnsubscribeToken(token);
-      await markRecipientUnsubscribed(payload.recipient, {
+      await markRecipientUnsubscribed(payload.email, {
         campaignId: payload.campaignId,
         tokenHash: payload.tokenHash,
         source: "footer_link"
