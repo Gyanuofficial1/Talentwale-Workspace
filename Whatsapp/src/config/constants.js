@@ -24,57 +24,6 @@ const DEFAULT_SMTP_SEND_RATE_PER_MINUTE = Math.max(
 );
 const DEFAULT_SMTP_SEND_DELAY_MS = Math.ceil(60000 / DEFAULT_SMTP_SEND_RATE_PER_MINUTE);
 const SMTP_SEND_TIMEOUT_MS = Math.max(5000, Number(process.env.SMTP_SEND_TIMEOUT_MS || 45000));
-const SMTP_VERIFY_TIMEOUT_MS = Math.max(5000, Number(process.env.SMTP_VERIFY_TIMEOUT_MS || 10000));
-const SMTP_CONNECTION_TIMEOUT_MS = Math.max(1000, Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 10000));
-const SMTP_GREETING_TIMEOUT_MS = Math.max(1000, Number(process.env.SMTP_GREETING_TIMEOUT_MS || 10000));
-const SMTP_SOCKET_TIMEOUT_MS = Math.max(1000, Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 60000));
-const EMAIL_VERIFY_MODE = String(process.env.EMAIL_VERIFY_MODE || "mx").trim().toLowerCase();
-const EMAIL_VERIFY_ENFORCE = ["1", "true", "yes"].includes(
-  String(process.env.EMAIL_VERIFY_ENFORCE || "true").trim().toLowerCase(),
-);
-const EMAIL_VERIFY_TIMEOUT_MS = Math.max(1000, Number(process.env.EMAIL_VERIFY_TIMEOUT_MS || 3000));
-const EMAIL_VERIFY_CACHE_TTL_MS = Math.max(60000, Number(process.env.EMAIL_VERIFY_CACHE_TTL_MS || 6 * 60 * 60 * 1000));
-const EMAIL_VERIFY_ALLOW_A_FALLBACK = ["1", "true", "yes"].includes(
-  String(process.env.EMAIL_VERIFY_ALLOW_A_FALLBACK || "true").trim().toLowerCase(),
-);
-const EMAIL_VERIFY_REJECT_RISKY = ["1", "true", "yes"].includes(
-  String(process.env.EMAIL_VERIFY_REJECT_RISKY || "true").trim().toLowerCase(),
-);
-const EMAIL_VERIFY_SMTP_CONNECT_TIMEOUT_MS = Math.max(
-  1000,
-  Number(process.env.EMAIL_VERIFY_SMTP_CONNECT_TIMEOUT_MS || 6000),
-);
-const EMAIL_VERIFY_SMTP_COMMAND_TIMEOUT_MS = Math.max(
-  1000,
-  Number(process.env.EMAIL_VERIFY_SMTP_COMMAND_TIMEOUT_MS || 6000),
-);
-const EMAIL_VERIFY_SMTP_MAX_MX_TO_TRY = Math.min(
-  5,
-  Math.max(1, Number(process.env.EMAIL_VERIFY_SMTP_MAX_MX_TO_TRY || 2)),
-);
-const EMAIL_VERIFY_SMTP_CHECK_CATCH_ALL = ["1", "true", "yes"].includes(
-  String(process.env.EMAIL_VERIFY_SMTP_CHECK_CATCH_ALL || "false").trim().toLowerCase(),
-);
-const EMAIL_VERIFY_SMTP_PROBE_CACHE_TTL_MS = Math.max(
-  60000,
-  Number(process.env.EMAIL_VERIFY_SMTP_PROBE_CACHE_TTL_MS || 30 * 60 * 1000),
-);
-const EMAIL_VERIFY_SMTP_HELO_HOST =
-  String(process.env.EMAIL_VERIFY_SMTP_HELO_HOST || process.env.PUBLIC_BASE_URL || "localhost.localdomain")
-    .trim()
-    .replace(/^https?:\/\//i, "")
-    .replace(/[:/].*$/, "") || "localhost.localdomain";
-const EMAIL_VERIFY_SMTP_PROBE_FROM = String(
-  process.env.EMAIL_VERIFY_SMTP_PROBE_FROM || `postmaster@${EMAIL_VERIFY_SMTP_HELO_HOST}`,
-)
-  .trim()
-  .toLowerCase();
-const EMAIL_BLOCK_DISPOSABLE_DOMAINS = ["1", "true", "yes"].includes(
-  String(process.env.EMAIL_BLOCK_DISPOSABLE_DOMAINS || "true").trim().toLowerCase(),
-);
-const EMAIL_SUPPRESSION_ENABLED = ["1", "true", "yes"].includes(
-  String(process.env.EMAIL_SUPPRESSION_ENABLED || "true").trim().toLowerCase(),
-);
 const SMTP_TEST_INCLUDE_LIST_UNSUBSCRIBE = ["1", "true", "yes"].includes(
   String(process.env.SMTP_TEST_INCLUDE_LIST_UNSUBSCRIBE || "false").trim().toLowerCase(),
 );
@@ -96,7 +45,7 @@ const EMAIL_QUEUE_SOFT_FAIL_MAX_RETRY = Math.max(
   0,
   Number(process.env.EMAIL_QUEUE_SOFT_FAIL_MAX_RETRY || 1),
 );
-const SMTP_PROVIDER_CATALOG = ["ses", "gmail"];
+const SMTP_PROVIDER_CATALOG = ["sesapi"];
 const UNSUBSCRIBE_ROUTE_PATH = "/unsubscribe";
 const EMAIL_TRACKING_OPEN_ROUTE_PATH = "/api/email/track/open";
 const EMAIL_TRACKING_CLICK_ROUTE_PATH = "/api/email/track/click";
@@ -169,25 +118,6 @@ module.exports = {
   DEFAULT_SMTP_SEND_RATE_PER_MINUTE,
   DEFAULT_SMTP_SEND_DELAY_MS,
   SMTP_SEND_TIMEOUT_MS,
-  SMTP_VERIFY_TIMEOUT_MS,
-  SMTP_CONNECTION_TIMEOUT_MS,
-  SMTP_GREETING_TIMEOUT_MS,
-  SMTP_SOCKET_TIMEOUT_MS,
-  EMAIL_VERIFY_MODE,
-  EMAIL_VERIFY_ENFORCE,
-  EMAIL_VERIFY_TIMEOUT_MS,
-  EMAIL_VERIFY_CACHE_TTL_MS,
-  EMAIL_VERIFY_ALLOW_A_FALLBACK,
-  EMAIL_VERIFY_REJECT_RISKY,
-  EMAIL_VERIFY_SMTP_CONNECT_TIMEOUT_MS,
-  EMAIL_VERIFY_SMTP_COMMAND_TIMEOUT_MS,
-  EMAIL_VERIFY_SMTP_MAX_MX_TO_TRY,
-  EMAIL_VERIFY_SMTP_CHECK_CATCH_ALL,
-  EMAIL_VERIFY_SMTP_PROBE_CACHE_TTL_MS,
-  EMAIL_VERIFY_SMTP_HELO_HOST,
-  EMAIL_VERIFY_SMTP_PROBE_FROM,
-  EMAIL_BLOCK_DISPOSABLE_DOMAINS,
-  EMAIL_SUPPRESSION_ENABLED,
   SMTP_TEST_INCLUDE_LIST_UNSUBSCRIBE,
   CAMPAIGN_STATUS_TERMINAL,
   CAMPAIGN_CHANNEL_WHATSAPP,

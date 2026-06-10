@@ -18,6 +18,7 @@ const nodemailer = require("nodemailer");
 const net = require("net");
 const dns = require("dns").promises;
 const crypto = require("crypto");
+const { SESClient, SendRawEmailCommand } = require("@aws-sdk/client-ses");
 
 
 function getSmtpProviderOptions() {
@@ -25,57 +26,43 @@ function getSmtpProviderOptions() {
 }
 
 function resolveSmtpProvider(requestedProvider) {
-  const providerOptions = getSmtpProviderOptions();
-  const selectedProvider = requestedProvider
-    ? normalizeSmtpProvider(requestedProvider)
-    : getPrimarySmtpProvider();
+  return "sesapi";
+}
 
-  if (!selectedProvider) {
-    throw new Error("No active SMTP provider configured. Add and activate SMTP credentials in Config Center.");
-  }
-  if (!providerOptions.includes(selectedProvider)) {
-    throw new Error(`Selected SMTP provider is not allowed. Allowed: ${providerOptions.join(", ")}.`);
-  }
-
-  return selectedProvider;
+function getSesApiConfig() {
+  return {
+    accessKeyId: String(process.env.AWS_SES_API_ACCESS_KEY_ID || "").trim(),
+    secretAccessKey: String(process.env.AWS_SES_API_SECRET_ACCESS_KEY || "").trim(),
+    region: String(process.env.AWS_SES_API_REGION || process.env.AWS_SQS_REGION || "ap-south-1").trim(),
+    fromAddress: String(process.env.AWS_SES_API_FROM_ADDRESS || "").trim().toLowerCase(),
+    fromName: String(process.env.AWS_SES_API_FROM_NAME || "TalentWale").trim(),
+    replyTo: String(process.env.AWS_SES_API_REPLY_TO || "").trim().toLowerCase(),
+  };
 }
 
 function getSmtpConfig(provider) {
   const selectedProvider = resolveSmtpProvider(provider);
-  const runtimeProfile = smtpRuntimeProfiles.get(selectedProvider);
-  if (runtimeProfile) {
+
+  if (selectedProvider === "sesapi") {
+    const sesApiCfg = getSesApiConfig();
     return {
-      provider: selectedProvider,
-      host: String(runtimeProfile.host || "").trim(),
-      port: Number(runtimeProfile.port || 587),
-      secure: Boolean(runtimeProfile.secure),
-      user: String(runtimeProfile.user || "").trim(),
-      pass: String(runtimeProfile.pass || "").trim(),
-      from: String(runtimeProfile.from || "").trim(),
-      fromName: normalizeSmtpFromName(runtimeProfile.fromName || ""),
-      replyTo: String(runtimeProfile.replyTo || "").trim(),
-      fromOptionsRaw: String(runtimeProfile.fromOptionsRaw || "").trim(),
-      source: "db",
-      profileId: String(runtimeProfile.profileId || ""),
-      profileName: String(runtimeProfile.profileName || ""),
+      provider: "sesapi",
+      host: "email.us-east-1.amazonaws.com", // kept for backwards compat
+      port: 443,
+      secure: true,
+      user: sesApiCfg.accessKeyId,
+      pass: sesApiCfg.secretAccessKey,
+      from: sesApiCfg.fromAddress,
+      fromName: sesApiCfg.fromName,
+      replyTo: sesApiCfg.replyTo,
+      fromOptionsRaw: sesApiCfg.fromAddress,
+      source: "env",
+      profileId: "sesapi-env",
+      profileName: "AWS SES API (SDK)",
     };
   }
 
-  return {
-    provider: selectedProvider,
-    host: "",
-    port: 0,
-    secure: false,
-    user: "",
-    pass: "",
-    from: "",
-    fromName: "",
-    replyTo: "",
-    fromOptionsRaw: "",
-    source: "db",
-    profileId: "",
-    profileName: "",
-  };
+  throw new Error(`Unsupported email provider: ${selectedProvider}`);
 }
 
 function getSmtpFromOptions(provider) {
@@ -134,7 +121,7 @@ function resolveSmtpReplyToAddress(requestedReplyTo, defaultReplyTo = "") {
 
 function buildSmtpFromHeader(fromAddress, fromName = "") {
   const address = String(fromAddress || "").trim();
-  const name = normalizeSmtpFromName(fromName || "");
+  const name = String(fromName || "").trim();
   if (!name) {
     return address;
   }
@@ -182,38 +169,50 @@ function buildEmailBodiesFromTemplate(bodyTemplate, mergedRow, formatInput) {
 
 function createSmtpTransporter(providerInput) {
   const provider = resolveSmtpProvider(providerInput);
-  const smtpConfig = getSmtpConfig(provider);
+  
+  if (provider === "sesapi") {
+    const sesApiCfg = getSesApiConfig();
+    if (!sesApiCfg.accessKeyId || !sesApiCfg.secretAccessKey) {
+      throw new Error(
+        "AWS SES API credentials missing. Set AWS_SES_API_ACCESS_KEY_ID and AWS_SES_API_SECRET_ACCESS_KEY in .env"
+      );
+    }
+    if (!sesApiCfg.fromAddress) {
+      throw new Error(
+        "AWS SES API from address missing. Set AWS_SES_API_FROM_ADDRESS in .env"
+      );
+    }
 
-  if (!smtpConfig.host || !smtpConfig.port) {
-    throw new Error(`SMTP not configured for ${provider}. Activate a DB credential profile in Config Center.`);
+    const sesClient = new SESClient({
+      region: sesApiCfg.region,
+      credentials: {
+        accessKeyId: sesApiCfg.accessKeyId,
+        secretAccessKey: sesApiCfg.secretAccessKey,
+      },
+    });
+
+    const transporter = nodemailer.createTransport({
+      SES: { ses: sesClient, aws: { SendRawEmailCommand } },
+      sendingRate: 14, // ~14 emails/sec max for SES
+    });
+
+    return {
+      provider,
+      transporter,
+      fromAddress: sesApiCfg.fromAddress,
+      fromName: sesApiCfg.fromName,
+      replyToAddress: sesApiCfg.replyTo,
+    };
   }
 
-  const transporterConfig = {
-    host: smtpConfig.host,
-    port: smtpConfig.port,
-    secure: smtpConfig.secure,
-    connectionTimeout: SMTP_CONNECTION_TIMEOUT_MS,
-    greetingTimeout: SMTP_GREETING_TIMEOUT_MS,
-    socketTimeout: SMTP_SOCKET_TIMEOUT_MS,
-  };
-
-  if (smtpConfig.user && smtpConfig.pass) {
-    transporterConfig.auth = { user: smtpConfig.user, pass: smtpConfig.pass };
-  }
-
-  return {
-    provider,
-    transporter: nodemailer.createTransport(transporterConfig),
-    fromAddress: smtpConfig.from,
-    fromName: smtpConfig.fromName,
-    replyToAddress: smtpConfig.replyTo,
-  };
+  throw new Error(`Unsupported email provider: ${provider}`);
 }
 
 module.exports = {
   getSmtpProviderOptions,
   resolveSmtpProvider,
   getSmtpConfig,
+  getSesApiConfig,
   getSmtpFromOptions,
   resolveSmtpFromAddress,
   resolveSmtpReplyToAddress,

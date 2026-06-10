@@ -114,24 +114,6 @@ async function processEmailRecipient(campaign, recipientRow, attemptIndex, trans
   const rowData = sanitizeRowObject(recipientRow.row_data);
   const recipient = normalizeEmail(recipientRow.recipient);
 
-  const preflight = await preflightEmailDeliverability(recipient);
-  if (!preflight.ok && EMAIL_VERIFY_ENFORCE) {
-    await logEmailRejection({
-      campaignId,
-      recipient,
-      gate: String(preflight.gate || "preflight"),
-      verdict: String(preflight.verdict || "rejected"),
-      reason: preflight.reason,
-      source: "preflight",
-      rowIndex,
-      rowData,
-    });
-    return {
-      status: "failed",
-      errorText: preflight.reason,
-      lastMessage: `Precheck failed: ${preflight.gate}`,
-    };
-  }
 
   if (attemptIndex > 0) {
     await sleep(sendDelayMs);
@@ -170,23 +152,6 @@ async function processEmailRecipient(campaign, recipientRow, attemptIndex, trans
       "SMTP send timeout",
     );
   } catch (error) {
-    const errorText = String(error?.message || "Send failed.");
-    const hardBounce = isLikelyHardBounceError(errorText);
-    if (hardBounce) {
-      rememberSuppressedRecipient(recipient, errorText, {
-        source: "smtp_send",
-      });
-      await logEmailRejection({
-        campaignId,
-        recipient,
-        gate: "smtp_send",
-        verdict: "undeliverable",
-        reason: errorText,
-        source: "smtp_send",
-        rowIndex,
-        rowData,
-      });
-    }
     throw error;
   }
 
@@ -228,7 +193,10 @@ async function runCampaign(campaign) {
       await finalizeCampaign(campaignId, "failed", `SMTP from address missing for ${smtpProvider} provider.`);
       return;
     }
-    await withTimeout(transporterContext.transporter.verify(), SMTP_VERIFY_TIMEOUT_MS, "SMTP verify timeout");
+    // sesapi (AWS SES SDK) does not support transporter.verify() — skip it
+    if (smtpProvider !== "sesapi") {
+      await withTimeout(transporterContext.transporter.verify(), SMTP_VERIFY_TIMEOUT_MS, "SMTP verify timeout");
+    }
   }
 
   while (true) {

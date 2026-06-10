@@ -91,6 +91,7 @@ async function startSqsLocalConsumer() {
         QueueUrl: emailQueueRuntime.queueUrl,
         MaxNumberOfMessages: 5,
         WaitTimeSeconds: 10,
+        VisibilityTimeout: 90, // 90 seconds — agar processing fail ho to message 90s baad dobara visible ho
         AttributeNames: ["ApproximateReceiveCount"]
       };
 
@@ -133,7 +134,11 @@ async function getEmailQueueSmtpContext(provider) {
     throw new Error(`From address is required for active ${selectedProvider} SMTP profile.`);
   }
 
-  await withTimeout(context.transporter.verify(), SMTP_VERIFY_TIMEOUT_MS, "SMTP verify timeout");
+  // sesapi (AWS SES SDK) does not support transporter.verify() — skip it
+  if (selectedProvider !== "sesapi") {
+    await withTimeout(context.transporter.verify(), SMTP_VERIFY_TIMEOUT_MS, "SMTP verify timeout");
+  }
+
   emailQueueSmtpContexts.set(selectedProvider, context);
   return context;
 }
@@ -214,95 +219,60 @@ async function processQueuedEmailTask(payload, options = {}) {
   }
 
   let resultPatch;
-  const preflight = await preflightEmailDeliverability(recipient);
-  if (!preflight.ok && EMAIL_VERIFY_ENFORCE) {
-    await logEmailRejection({
-      campaignId,
-      recipient,
-      gate: String(preflight.gate || "preflight"),
-      verdict: String(preflight.verdict || "rejected"),
-      reason: preflight.reason,
-      source: "preflight",
-      rowIndex,
-      rowData,
-    });
-    resultPatch = {
-      status: "failed",
-      errorText: preflight.reason,
-      lastMessage: `Precheck failed: ${preflight.gate}`,
-    };
-  } else {
-    await applyEmailQueueThrottle(sendDelayMs);
-    const mergedRow = buildEmailTemplateContext(rowData, {
-      recipient,
-      campaignId,
-    });
-    const subject = interpolateTemplate(subjectTemplate, mergedRow);
-    const emailBodies = buildEmailBodiesFromTemplate(bodyTemplate, mergedRow, bodyFormat);
-    const trackedEmailBodies = applyEmailEngagementTracking(emailBodies, {
-      campaignId,
-      recipient,
-      rowIndex,
-      baseUrl: trackingBaseUrl,
-    });
-    const headers = buildListUnsubscribeHeaders(recipient, { campaignId });
+  await applyEmailQueueThrottle(sendDelayMs);
+  const mergedRow = buildEmailTemplateContext(rowData, {
+    recipient,
+    campaignId,
+  });
+  const subject = interpolateTemplate(subjectTemplate, mergedRow);
+  const emailBodies = buildEmailBodiesFromTemplate(bodyTemplate, mergedRow, bodyFormat);
+  const trackedEmailBodies = applyEmailEngagementTracking(emailBodies, {
+    campaignId,
+    recipient,
+    rowIndex,
+    baseUrl: trackingBaseUrl,
+  });
+  const headers = buildListUnsubscribeHeaders(recipient, { campaignId });
 
-    try {
-      const context = await getEmailQueueSmtpContext(smtpProvider);
-      const fromAddress = resolveSmtpFromAddress(smtpProvider, requestedFrom, context.fromAddress);
-      const fromHeader = buildSmtpFromHeader(fromAddress, context.fromName || "");
-      const replyToAddress = resolveSmtpReplyToAddress(requestedReplyTo, context.replyToAddress);
-      const info = await withTimeout(
-        context.transporter.sendMail({
-          from: fromHeader,
-          to: recipient,
-          replyTo: replyToAddress || undefined,
-          subject: subject || "Notification",
-          html: trackedEmailBodies.html,
-          text: trackedEmailBodies.text,
-          headers: Object.keys(headers).length ? headers : undefined,
-        }),
-        SMTP_SEND_TIMEOUT_MS,
-        "SMTP send timeout",
-      );
-      emailQueueLastSentAt = Date.now();
-      resultPatch = {
-        status: "sent",
-        providerMessageId: String(info.messageId || ""),
-        lastMessage: "Sending in progress",
-      };
-    } catch (error) {
-      const errorText = String(error?.message || "Send failed.");
-      const hardBounce = isLikelyHardBounceError(errorText);
-      emailQueueSmtpContexts.delete(smtpProvider);
-      if (hardBounce) {
-        rememberSuppressedRecipient(recipient, errorText, {
-          source: "smtp_send",
-        });
-        await logEmailRejection({
-          campaignId,
-          recipient,
-          gate: "smtp_send",
-          verdict: "undeliverable",
-          reason: errorText,
-          source: "smtp_send",
-          rowIndex,
-          rowData,
-        });
-      }
-      if (!hardBounce && canRetrySoftQueueFailure(dequeueCount)) {
-        return {
-          action: "retry",
-          reason: "soft_fail",
-          errorText,
-        };
-      }
-      resultPatch = {
-        status: "failed",
+  try {
+    const context = await getEmailQueueSmtpContext(smtpProvider);
+    const fromAddress = resolveSmtpFromAddress(smtpProvider, requestedFrom, context.fromAddress);
+    const fromHeader = buildSmtpFromHeader(fromAddress, context.fromName || "");
+    const replyToAddress = resolveSmtpReplyToAddress(requestedReplyTo, context.replyToAddress);
+    const info = await withTimeout(
+      context.transporter.sendMail({
+        from: fromHeader,
+        to: recipient,
+        replyTo: replyToAddress || undefined,
+        subject: subject || "Notification",
+        html: trackedEmailBodies.html,
+        text: trackedEmailBodies.text,
+        headers: Object.keys(headers).length ? headers : undefined,
+      }),
+      SMTP_SEND_TIMEOUT_MS,
+      "SMTP send timeout",
+    );
+    emailQueueLastSentAt = Date.now();
+    resultPatch = {
+      status: "sent",
+      providerMessageId: String(info.messageId || ""),
+      lastMessage: "Sending in progress",
+    };
+  } catch (error) {
+    const errorText = String(error?.message || "Send failed.");
+    emailQueueSmtpContexts.delete(smtpProvider);
+    if (canRetrySoftQueueFailure(dequeueCount)) {
+      return {
+        action: "retry",
+        reason: "soft_fail",
         errorText,
-        lastMessage: hardBounce ? "Hard bounce: recipient marked invalid" : errorText,
       };
     }
+    resultPatch = {
+      status: "failed",
+      errorText,
+      lastMessage: errorText,
+    };
   }
 
   const status = String(resultPatch.status || "failed").toLowerCase();

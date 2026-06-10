@@ -199,56 +199,13 @@ async function handleApi(req, res) {
 
   if (req.method === "GET" && req.url === "/api/config") {
     try {
-      const smtpProviderOptions = getSmtpProviderOptions();
-      const smtpDefaultProvider = getPrimarySmtpProvider();
-      const smtpProviderStatuses = smtpProviderOptions.map((provider) => {
-        const config = getSmtpConfig(provider);
-        return {
-          provider,
-          host: String(config.host || "").trim(),
-          port: Number(config.port || 0),
-          from: String(config.from || "").trim(),
-          fromName: normalizeSmtpFromName(config.fromName || ""),
-          replyTo: String(config.replyTo || "").trim(),
-          profileName: String(config.profileName || "").trim(),
-          profileId: String(config.profileId || "").trim(),
-          configured: Boolean(config.host && config.port),
-          isDefault: provider === smtpDefaultProvider,
-        };
-      });
-      const smtpConfigured = smtpProviderStatuses.some((item) => item.configured);
-      const smtpFromOptionsByProvider = Object.fromEntries(
-        smtpProviderOptions.map((provider) => [provider, getSmtpFromOptions(provider)]),
-      );
-      const smtpDefaultFromByProvider = Object.fromEntries(
-        smtpProviderOptions.map((provider) => [provider, getSmtpConfig(provider).from]),
-      );
-      const smtpDefaultReplyToByProvider = Object.fromEntries(
-        smtpProviderOptions.map((provider) => [provider, getSmtpConfig(provider).replyTo || ""]),
-      );
-      const smtpCredentials = await listSmtpCredentialProfiles();
       sendJson(res, 200, {
         templates: getTemplates(),
         defaultRecipient: process.env.RECIPIENT_PHONE_NUMBER || "",
         smtpSendRatePerMinute: DEFAULT_SMTP_SEND_RATE_PER_MINUTE,
-        smtpConfigured,
-        smtpProviderOptions,
-        smtpDefaultProvider,
-        smtpProviderStatuses,
-        smtpFromOptionsByProvider,
-        smtpDefaultFromByProvider,
-        smtpDefaultReplyToByProvider,
-        smtpCredentials,
-        emailVerification: {
-          mode: EMAIL_VERIFY_MODE,
-          enforce: EMAIL_VERIFY_ENFORCE,
-          rejectRisky: EMAIL_VERIFY_REJECT_RISKY,
-          allowAFallback: EMAIL_VERIFY_ALLOW_A_FALLBACK,
-          smtpProbeEnabled: isEmailSmtpProbeEnabled(),
-          smtpProbeMaxMxHosts: EMAIL_VERIFY_SMTP_MAX_MX_TO_TRY,
-          suppressionEnabled: EMAIL_SUPPRESSION_ENABLED,
-          suppressedCount: await getSuppressedCount(),
-        },
+        smtpConfigured: true, // we assume sesapi is always configured via env
+        smtpProviderOptions: ["sesapi"],
+        smtpDefaultProvider: "sesapi",
       });
     } catch (error) {
       sendJson(res, 500, { error: error.message || "Failed to read configuration." });
@@ -256,80 +213,6 @@ async function handleApi(req, res) {
     return true;
   }
 
-  if (req.method === "POST" && routePath === "/api/smtp-default-provider") {
-    try {
-      const rawBody = await readRequestBody(req);
-      const payload = rawBody ? JSON.parse(rawBody) : {};
-      const provider = setPrimarySmtpProvider(payload.provider);
-
-      sendJson(res, 200, {
-        ok: true,
-        provider,
-      });
-    } catch (error) {
-      sendJson(res, error.statusCode || 500, { error: error.message || "Failed to set SMTP default provider." });
-    }
-    return true;
-  }
-
-  if (req.method === "GET" && routePath === "/api/smtp-credentials") {
-    try {
-      const smtpCredentials = await listSmtpCredentialProfiles();
-      sendJson(res, 200, { ok: true, items: smtpCredentials });
-    } catch (error) {
-      sendJson(res, error.statusCode || 500, { error: error.message || "Failed to load SMTP credentials." });
-    }
-    return true;
-  }
-
-  if (req.method === "POST" && routePath === "/api/smtp-credentials") {
-    try {
-      const rawBody = await readRequestBody(req);
-      const payload = rawBody ? JSON.parse(rawBody) : {};
-      const item = await createSmtpCredentialProfile(payload);
-      sendJson(res, 201, { ok: true, item });
-    } catch (error) {
-      sendJson(res, error.statusCode || 500, { error: error.message || "Failed to create SMTP credential." });
-    }
-    return true;
-  }
-
-  const smtpCredentialActivateMatch = routePath.match(/^\/api\/smtp-credentials\/([^/]+)\/activate$/i);
-  if (req.method === "POST" && smtpCredentialActivateMatch) {
-    try {
-      const profileId = decodeURIComponent(String(smtpCredentialActivateMatch[1] || "")).trim();
-      const item = await activateSmtpCredentialProfile(profileId);
-      sendJson(res, 200, { ok: true, item });
-    } catch (error) {
-      sendJson(res, error.statusCode || 500, { error: error.message || "Failed to activate SMTP credential." });
-    }
-    return true;
-  }
-
-  const smtpCredentialItemMatch = routePath.match(/^\/api\/smtp-credentials\/([^/]+)$/i);
-  if (smtpCredentialItemMatch && req.method === "PUT") {
-    try {
-      const profileId = decodeURIComponent(String(smtpCredentialItemMatch[1] || "")).trim();
-      const rawBody = await readRequestBody(req);
-      const payload = rawBody ? JSON.parse(rawBody) : {};
-      const item = await updateSmtpCredentialProfile(profileId, payload);
-      sendJson(res, 200, { ok: true, item });
-    } catch (error) {
-      sendJson(res, error.statusCode || 500, { error: error.message || "Failed to update SMTP credential." });
-    }
-    return true;
-  }
-
-  if (smtpCredentialItemMatch && req.method === "DELETE") {
-    try {
-      const profileId = decodeURIComponent(String(smtpCredentialItemMatch[1] || "")).trim();
-      const item = await deleteSmtpCredentialProfile(profileId);
-      sendJson(res, 200, { ok: true, item });
-    } catch (error) {
-      sendJson(res, error.statusCode || 500, { error: error.message || "Failed to delete SMTP credential." });
-    }
-    return true;
-  }
 
   if (req.method === "POST" && req.url === "/api/send") {
     let templateName = "";
@@ -556,8 +439,6 @@ async function handleApi(req, res) {
       const finalReplyTo = resolveSmtpReplyToAddress(requestedReplyTo, defaultReplyToAddress);
       const appBaseUrl = getAppBaseUrl(req);
 
-      await withTimeout(transporter.verify(), SMTP_VERIFY_TIMEOUT_MS, "SMTP verify timeout");
-
       const sampleRecipient = recipientColumn ? normalizeEmail(getCell(row, recipientColumn)) : "";
       const mergedRow = buildEmailTemplateContext(
         {
@@ -663,12 +544,6 @@ async function handleApi(req, res) {
         trackingWarning: trackingBaseLooksLocal
           ? "Tracking base URL is local (localhost/127.0.0.1). For real open/click analytics set PUBLIC_BASE_URL or run ngrok."
           : "",
-        emailValidation: {
-          mode: EMAIL_VERIFY_MODE,
-          enforce: EMAIL_VERIFY_ENFORCE,
-          rejectRisky: EMAIL_VERIFY_REJECT_RISKY,
-          smtpProbe: isEmailSmtpProbeEnabled(),
-        },
         rejectedListEndpoint: `/api/email-rejections?campaignId=${encodeURIComponent(String(campaignId || ""))}`,
       });
     } catch (error) {

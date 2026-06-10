@@ -31,13 +31,12 @@ loadToGlobal(database);
 // 3. Load Models
 loadToGlobal(require("./src/models/messageModel"));
 loadToGlobal(require("./src/models/campaignModel"));
-loadToGlobal(require("./src/models/smtpModel"));
 loadToGlobal(require("./src/models/emailModel"));
 loadToGlobal(require("./src/models/conversationModel"));
 
+
 // 4. Load Services
 loadToGlobal(require("./src/services/smtpService"));
-loadToGlobal(require("./src/services/emailVerifyService"));
 loadToGlobal(require("./src/services/campaignService"));
 loadToGlobal(require("./src/services/sqsQueueService"));
 loadToGlobal(require("./src/services/contactService"));
@@ -86,15 +85,8 @@ const server = http.createServer(async (req, res) => {
 // 7. Lambda Integration
 async function lambdaInit() {
   await database.initDatabase();
-  await global.loadActiveSmtpCredentialsFromDb();
   await global.initSqsEmailQueue();
-  await global.loadEmailUnsubscribesFromDb();
-  await global.loadEmailSuppressionsFromDb();
   await global.resetProcessingRecipientsOnStartup();
-  
-  if (global.emailQueueRuntime && global.emailQueueRuntime.enabled) {
-    // startAzureEmailQueueConsumer is removed since we use Lambda SQS Triggers now
-  }
 }
 
 // 8. Start Local Server if not in Lambda
