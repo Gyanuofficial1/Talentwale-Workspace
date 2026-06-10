@@ -46,6 +46,67 @@ async function handleApi(req, res) {
   const isAuth = requireAuth(req, res);
   if (!isAuth) return true;
 
+  if (req.method === "POST" && routePath === "/api/webhooks/ses") {
+    try {
+      const rawBody = await helpers.readRequestBody ? await helpers.readRequestBody(req) : await new Promise((resolve) => {
+         let body = "";
+         req.on("data", chunk => body += chunk.toString());
+         req.on("end", () => resolve(body));
+      });
+      if (!rawBody) {
+        sendJson(res, 400, { error: "No payload" });
+        return true;
+      }
+      
+      const payload = JSON.parse(rawBody);
+      
+      // 1. AWS SNS Subscription Confirmation
+      if (payload.Type === "SubscriptionConfirmation" && payload.SubscribeURL) {
+        // Fetch URL to verify
+        fetch(payload.SubscribeURL).then(r => r.text()).catch(e => console.error("SNS Confirm Error:", e));
+        sendJson(res, 200, { ok: true, message: "Subscription confirmed" });
+        return true;
+      }
+
+      // 2. AWS SNS Notifications (Delivery, Bounce, Complaint)
+      if (payload.Type === "Notification" && payload.Message) {
+        const msg = JSON.parse(payload.Message);
+        const notificationType = msg.notificationType;
+        const dbPool = getPool();
+
+        if (notificationType === "Bounce" && msg.bounce?.bouncedRecipients) {
+           for (const r of msg.bounce.bouncedRecipients) {
+              const email = r.emailAddress;
+              if (email && dbPool) {
+                 await dbPool.query(`
+                   INSERT INTO email_suppressions (email, source, reason, first_seen_at, last_seen_at, updated_at)
+                   VALUES ($1, $2, $3, NOW(), NOW(), NOW())
+                   ON CONFLICT (email) DO UPDATE SET last_seen_at = NOW(), updated_at = NOW()
+                 `, [email, 'ses_bounce', msg.bounce.bounceType]);
+              }
+           }
+        } else if (notificationType === "Complaint" && msg.complaint?.complainedRecipients) {
+           for (const r of msg.complaint.complainedRecipients) {
+              const email = r.emailAddress;
+              if (email && dbPool) {
+                 await dbPool.query(`
+                   INSERT INTO email_suppressions (email, source, reason, first_seen_at, last_seen_at, updated_at)
+                   VALUES ($1, $2, $3, NOW(), NOW(), NOW())
+                   ON CONFLICT (email) DO UPDATE SET last_seen_at = NOW(), updated_at = NOW()
+                 `, [email, 'ses_complaint', msg.complaint.complaintFeedbackType]);
+              }
+           }
+        }
+      }
+      
+      sendJson(res, 200, { ok: true });
+    } catch (e) {
+      console.error("Webhook Error", e);
+      sendJson(res, 500, { error: "Internal Error" });
+    }
+    return true;
+  }
+
   if (req.method === "GET" && routePath === EMAIL_TRACKING_OPEN_ROUTE_PATH) {
     const parsedUrl = new URL(req.url, "http://localhost");
     const token = String(parsedUrl.searchParams.get("token") || "").trim();

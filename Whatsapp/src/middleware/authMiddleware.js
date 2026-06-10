@@ -9,7 +9,8 @@ function requireAuth(req, res, next) {
     "/api/login",
     "/api/email/track/open",
     "/api/email/track/click",
-    "/unsubscribe"
+    "/unsubscribe",
+    "/api/webhooks/ses"
   ];
   
   if (publicRoutes.includes(routePath)) {
