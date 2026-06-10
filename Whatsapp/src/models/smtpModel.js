@@ -320,6 +320,80 @@ function normalizeSmtpProvider(value) {
   return "";
 }
 
+function normalizeSmtpCredentialPayload(payload = {}, options = {}) {
+  const provider = normalizeSmtpProvider(payload.provider !== undefined ? payload.provider : options.provider);
+  if (!provider) {
+    throw buildHttpError(400, "SMTP provider must be either 'ses' or 'gmail'.");
+  }
+
+  const profileName = String(payload.profileName !== undefined ? payload.profileName : (options.profileName || "")).trim();
+  if (!profileName) {
+    throw buildHttpError(400, "Profile name is required.");
+  }
+
+  const host = String(payload.host !== undefined ? payload.host : (options.host || "")).trim();
+  if (!host) {
+    throw buildHttpError(400, "SMTP host is required.");
+  }
+
+  const portRaw = payload.port !== undefined ? payload.port : options.port;
+  const port = Number(portRaw);
+  if (isNaN(port) || port <= 0 || port > 65535) {
+    throw buildHttpError(400, "SMTP port must be a number between 1 and 65535.");
+  }
+
+  const secure = parseTruthyValue(payload.secure !== undefined ? payload.secure : options.secure, false);
+  const user = String(payload.user !== undefined ? payload.user : (options.user || "")).trim();
+  if (!user) {
+    throw buildHttpError(400, "SMTP user name is required.");
+  }
+
+  const pass = String(payload.pass !== undefined ? payload.pass : (options.pass || "")).trim();
+  if (options.requirePassword && !pass) {
+    throw buildHttpError(400, "SMTP password is required.");
+  }
+
+  const fromAddress = String(payload.fromAddress !== undefined ? payload.fromAddress : (options.fromAddress || "")).trim().toLowerCase();
+  if (!fromAddress) {
+    throw buildHttpError(400, "Sender 'from' address is required.");
+  }
+  if (!isValidEmail(fromAddress)) {
+    throw buildHttpError(400, `Sender 'from' address is invalid: ${fromAddress}`);
+  }
+
+  const fromName = normalizeSmtpFromName(payload.fromName !== undefined ? payload.fromName : options.fromName);
+  if (!fromName) {
+    throw buildHttpError(400, "Sender display name is required.");
+  }
+
+  const replyToAddress = String(payload.replyToAddress !== undefined ? payload.replyToAddress : (options.replyToAddress || "")).trim().toLowerCase();
+  if (replyToAddress && !isValidEmail(replyToAddress)) {
+    throw buildHttpError(400, `Reply-to email address is invalid: ${replyToAddress}`);
+  }
+
+  const payloadFromOptions = payload.fromOptions !== undefined ? payload.fromOptions : (payload.fromOptionsRaw !== undefined ? payload.fromOptionsRaw : null);
+  const optionsFromOptions = options.fromOptionsRaw !== undefined ? options.fromOptionsRaw : (options.fromOptions !== undefined ? options.fromOptions : "");
+  const fromOptionsInput = payloadFromOptions !== null ? payloadFromOptions : optionsFromOptions;
+  const fromOptionsRaw = normalizeSmtpFromOptionsRaw(fromOptionsInput, fromAddress);
+
+  const setActive = parseTruthyValue(payload.setActive !== undefined ? payload.setActive : options.setActive, false);
+
+  return {
+    provider,
+    profileName,
+    host,
+    port,
+    secure,
+    user,
+    pass,
+    fromAddress,
+    fromName,
+    replyToAddress,
+    fromOptionsRaw,
+    setActive,
+  };
+}
+
 function getActiveSmtpProviderOptions() {
   return Array.from(smtpRuntimeProfiles.keys())
     .map((provider) => normalizeSmtpProvider(provider))
@@ -500,6 +574,7 @@ module.exports = {
   deleteSmtpCredentialProfile,
   activateSmtpCredentialProfile,
   normalizeSmtpProvider,
+  normalizeSmtpCredentialPayload,
   getActiveSmtpProviderOptions,
   getPrimarySmtpProvider,
   setPrimarySmtpProvider,
