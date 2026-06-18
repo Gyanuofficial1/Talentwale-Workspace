@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CurlSheet Studio - Bulk Request Runner & Validator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <div class="glass-bg"></div>
+  
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <i data-lucide="layers"></i>
+        </div>
+        <div>
+          <h1>CurlSheet <span class="accent-text">Studio</span></h1>
+          <p class="subtitle">Bulk Curl Execution & Sheet Validator</p>
+        </div>
+      </div>
+      <div class="status-badge" id="system-status">
+        <span class="status-dot green"></span>
+        <span class="status-text">Server Connected</span>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="app-grid">
+      
+      <!-- Left: Configurations -->
+      <section class="config-panel">
+        
+        <!-- Google Sheet Card -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <i data-lucide="file-spreadsheet" class="icon-green"></i>
+            <h2>1. Google Sheet URL</h2>
+          </div>
+          <div class="card-body">
+            <p class="field-desc">Enter a public Google Sheet URL (Ensure share settings are "Anyone with link can view").</p>
+            <div class="input-group">
+              <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/.../edit" />
+              <button id="btn-fetch-sheet" class="btn btn-secondary">
+                <i data-lucide="download"></i> Fetch
+              </button>
+            </div>
+            <div id="sheet-info" class="sheet-info hidden">
+              <div class="info-row">
+                <span class="info-label">Total Rows:</span>
+                <span class="info-val" id="info-row-count">0</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Columns:</span>
+                <span class="info-val tags" id="info-columns"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Curl Command Card -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <i data-lucide="terminal" class="icon-blue"></i>
+            <h2>2. Curl Command Template</h2>
+          </div>
+          <div class="card-body">
+            <p class="field-desc">Use <code>{{Column_Name}}</code> to inject sheet row values dynamically.</p>
+            <textarea id="curl-template" rows="8" placeholder="curl -X POST &quot;https://api.example.com/validate&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;Authorization: Bearer YOUR_API_KEY&quot; \
+  -d '{
+    &quot;email&quot;: &quot;{{Email}}&quot;,
+    &quot;name&quot;: &quot;{{Name}}&quot;
+  }'"></textarea>
+            <div class="placeholder-helper">
+              <span class="helper-title">Available Placeholders:</span>
+              <div id="placeholders-list" class="tags">
+                <span class="tag placeholder-tag">Load a sheet first</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rule Builder Card -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <i data-lucide="check-square" class="icon-purple"></i>
+            <h2>3. Validation Logic</h2>
+          </div>
+          <div class="card-body">
+            <p class="field-desc">Define what makes a row validation status <strong>TRUE</strong>.</p>
+            
+            <div class="form-group">
+              <label for="rule-type">Condition Type</label>
+              <select id="rule-type">
+                <option value="status_2xx">HTTP Status is Success (2xx)</option>
+                <option value="status">HTTP Status Code matches...</option>
+                <option value="contains">Response body contains text...</option>
+                <option value="json">JSON Property match...</option>
+                <option value="js">Custom JavaScript expression...</option>
+              </select>
+            </div>
+
+            <!-- Conditional Inputs -->
+            <div id="rule-inputs" class="rule-inputs">
+              <!-- Code input -->
+              <div class="form-group hidden" id="group-status-code">
+                <label for="rule-status-code">Expected HTTP Status</label>
+                <input type="number" id="rule-status-code" value="200" placeholder="e.g. 200" />
+              </div>
+
+              <!-- Text contains input -->
+              <div class="form-group hidden" id="group-body-contains">
+                <label for="rule-body-contains">Text substring to search for</label>
+                <input type="text" id="rule-body-contains" placeholder="e.g. success: true" />
+              </div>
+
+              <!-- JSON path input -->
+              <div class="form-group hidden" id="group-json-path">
+                <div class="grid-2">
+                  <div>
+                    <label for="rule-json-path">JSON Path</label>
+                    <input type="text" id="rule-json-path" placeholder="e.g. user.isValid" />
+                  </div>
+                  <div>
+                    <label for="rule-json-val">Expected Value</label>
+                    <input type="text" id="rule-json-val" placeholder="e.g. true" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- JS Expression -->
+              <div class="form-group hidden" id="group-js-expr">
+                <label for="rule-js-expr">JS Code (returns boolean)</label>
+                <input type="text" id="rule-js-expr" value="status === 200 && json.valid === true" placeholder="status === 200 && json.success === true" />
+                <span class="input-tip">Variables: <code>status</code> (num), <code>body</code> (string), <code>json</code> (object)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings & Run -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <i data-lucide="settings" class="icon-orange"></i>
+            <h2>4. Concurrency & Delay</h2>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="concurrency">Concurrency Limit</label>
+                <input type="number" id="concurrency" value="5" min="1" max="25" />
+              </div>
+              <div class="form-group">
+                <label for="delay">Delay Between (ms)</label>
+                <input type="number" id="delay" value="200" min="0" max="5000" />
+              </div>
+            </div>
+
+            <button id="btn-run-validation" class="btn btn-primary btn-block" disabled>
+              <i data-lucide="play"></i> Run Validation Job
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right: Main Dashboard / Results -->
+      <section class="dashboard-panel">
+        
+        <!-- Live Statistics Grid -->
+        <div class="stats-grid">
+          <div class="stat-card glass-card">
+            <span class="stat-label">Total Rows</span>
+            <span class="stat-value" id="stat-total">0</span>
+          </div>
+          <div class="stat-card glass-card">
+            <span class="stat-label">Processed</span>
+            <span class="stat-value" id="stat-processed">0</span>
+          </div>
+          <div class="stat-card glass-card">
+            <span class="stat-label">Successes (TRUE)</span>
+            <span class="stat-value text-green" id="stat-success">0</span>
+          </div>
+          <div class="stat-card glass-card">
+            <span class="stat-label">Failures (FALSE)</span>
+            <span class="stat-value text-red" id="stat-failure">0</span>
+          </div>
+        </div>
+
+        <!-- Progress Bar Card -->
+        <div class="card glass-card progress-card hidden" id="progress-container">
+          <div class="progress-info">
+            <span class="progress-status" id="progress-status-text">Idle</span>
+            <span class="progress-percentage" id="progress-percent-text">0%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Table Preview Panel -->
+        <div class="card glass-card flex-grow table-card">
+          <div class="card-header justify-between">
+            <div class="header-left">
+              <i data-lucide="table" class="icon-emerald"></i>
+              <h2>Data Preview & Live Validation Results</h2>
+            </div>
+            <div class="actions-right" id="export-actions">
+              <button id="btn-export-excel" class="btn btn-success btn-sm" disabled>
+                <i data-lucide="file-spreadsheet"></i> Export to Excel
+              </button>
+              <button id="btn-export-csv" class="btn btn-secondary btn-sm" disabled>
+                <i data-lucide="file-text"></i> Export to CSV
+              </button>
+            </div>
+          </div>
+          <div class="table-toolbar">
+            <div class="filter-tabs">
+              <button class="tab-btn active" data-filter="all">All (<span id="tab-count-all">0</span>)</button>
+              <button class="tab-btn" data-filter="true">TRUE (<span id="tab-count-true">0</span>)</button>
+              <button class="tab-btn" data-filter="false">FALSE (<span id="tab-count-false">0</span>)</button>
+              <button class="tab-btn" data-filter="pending">Pending (<span id="tab-count-pending">0</span>)</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="preview-table">
+              <thead>
+                <tr>
+                  <th colspan="100%" class="placeholder-row text-center">Load a Google Sheet to see a live preview of rows and validation statuses.</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Live Console / Terminal Logs -->
+        <div class="card glass-card terminal-card">
+          <div class="card-header justify-between">
+            <div class="header-left">
+              <i data-lucide="terminal" class="icon-gray"></i>
+              <h2>Terminal Output Logs</h2>
+            </div>
+            <button id="btn-clear-logs" class="btn btn-link btn-sm">Clear</button>
+          </div>
+          <div class="terminal-body" id="terminal-logs">
+            <div class="log-line system-log">[System] Ready. Enter details to begin.</div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Details Modal -->
+  <div id="details-modal" class="modal hidden">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <div class="header-left">
+          <i data-lucide="info" class="icon-blue"></i>
+          <h3>Row <span id="modal-row-num">1</span> Details</h3>
+        </div>
+        <button id="btn-close-modal" class="btn btn-link">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-section">
+          <h4>Request URL</h4>
+          <div class="url-display" id="modal-req-url">https://api.example.com</div>
+        </div>
+        <div class="detail-section">
+          <div class="section-title-bar">
+            <h4>Response Body</h4>
+            <button id="btn-copy-response" class="btn btn-secondary btn-sm">
+              <i data-lucide="copy"></i> Copy Response
+            </button>
+          </div>
+          <pre id="modal-res-body" class="code-block"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

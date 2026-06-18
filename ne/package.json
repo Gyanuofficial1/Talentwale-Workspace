@@ -1,0 +1,18 @@
+{
+  "name": "google-sheet-curl-runner",
+  "version": "1.0.0",
+  "description": "Run curl commands for Google Sheet rows and export results to Excel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.6",
+    "express": "^4.21.1",
+    "xlsx": "^0.18.5",
+    "string-argv": "^0.3.2"
+  }
+}
