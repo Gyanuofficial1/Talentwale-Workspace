@@ -3216,8 +3216,8 @@ if (smtpAudienceSheet) {
 
 if (sendSmtpTestButton) {
   sendSmtpTestButton.addEventListener("click", async () => {
-    const subjectTemplate = String(smtpSubjectTemplate.value || "").trim();
-    const bodyTemplate = String(smtpBodyTemplate.value || "").trim();
+    const subjectTemplate = smtpSubjectTemplate ? String(smtpSubjectTemplate.value || "").trim() : "";
+    const bodyTemplate = smtpBodyTemplate ? String(smtpBodyTemplate.value || "").trim() : "";
     const bodyFormat = getSelectedSmtpBodyFormat();
     if (!subjectTemplate || !bodyTemplate) {
       setStatus("SMTP test failed", "error");
@@ -3225,15 +3225,10 @@ if (sendSmtpTestButton) {
       return;
     }
 
-    const recipientColumn = String(smtpRecipientColumn.value || "").trim();
-    const smtpProviderValue = getSelectedSmtpProvider();
-    if (!smtpProviderValue) {
-      setStatus("SMTP test failed", "error");
-      logActivity("Primary SMTP provider is not configured.", "error");
-      return;
-    }
-    const mailFrom = String(smtpFromAddress?.value || "").trim();
-    const replyTo = String(smtpReplyToAddress?.value || "").trim().toLowerCase();
+    const recipientColumn = smtpRecipientColumn ? String(smtpRecipientColumn.value || "").trim() : "";
+    const smtpProviderValue = getSelectedSmtpProvider() || "sesapi";
+    const mailFrom = smtpFromAddress ? String(smtpFromAddress.value || "").trim() : "";
+    const replyTo = smtpReplyToAddress ? String(smtpReplyToAddress.value || "").trim().toLowerCase() : "";
     if (replyTo && !isValidEmailAddress(replyTo)) {
       setStatus("SMTP test failed", "error");
       logActivity("Reply-To email must be valid.", "warn");
