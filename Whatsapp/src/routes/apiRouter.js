@@ -513,11 +513,9 @@ async function handleApi(req, res) {
       );
       const subject = interpolateTemplate(subjectTemplate, mergedRow);
       const emailBodies = buildEmailBodiesFromTemplate(bodyTemplate, mergedRow, bodyFormat);
-      const headers = SMTP_TEST_INCLUDE_LIST_UNSUBSCRIBE
-        ? buildListUnsubscribeHeaders(sampleRecipient || testRecipient, {
-            baseUrl: appBaseUrl,
-          })
-        : {};
+      const headers = buildListUnsubscribeHeaders(sampleRecipient || testRecipient, {
+        baseUrl: appBaseUrl,
+      });
 
       const info = await withTimeout(
         transporter.sendMail({

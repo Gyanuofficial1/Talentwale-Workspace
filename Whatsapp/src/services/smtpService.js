@@ -36,7 +36,7 @@ function getSesApiConfig() {
     region: String(process.env.AWS_SES_API_REGION || process.env.AWS_SQS_REGION || "ap-south-1").trim(),
     fromAddress: String(process.env.AWS_SES_API_FROM_ADDRESS || "").trim().toLowerCase(),
     fromName: String(process.env.AWS_SES_API_FROM_NAME || "TalentWale").trim(),
-    replyTo: String(process.env.AWS_SES_API_REPLY_TO || "").trim().toLowerCase(),
+    replyTo: String(process.env.AWS_SES_API_REPLY_TO || "jobs@talentwale.com").trim().toLowerCase(),
   };
 }
 
