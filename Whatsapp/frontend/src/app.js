@@ -3216,10 +3216,19 @@ if (smtpAudienceSheet) {
 
 if (sendSmtpTestButton) {
   sendSmtpTestButton.addEventListener("click", async () => {
+    console.log("[SMTP Test UI] Send Test button clicked!");
     const subjectTemplate = smtpSubjectTemplate ? String(smtpSubjectTemplate.value || "").trim() : "";
     const bodyTemplate = smtpBodyTemplate ? String(smtpBodyTemplate.value || "").trim() : "";
     const bodyFormat = getSelectedSmtpBodyFormat();
+
+    console.log("[SMTP Test UI] Extracted templates:", {
+      subjectTemplateLength: subjectTemplate.length,
+      bodyTemplateLength: bodyTemplate.length,
+      bodyFormat
+    });
+
     if (!subjectTemplate || !bodyTemplate) {
+      console.warn("[SMTP Test UI] Validation failed: subject or body template is empty.");
       setStatus("SMTP test failed", "error");
       logActivity("Subject and body template are required.", "warn");
       return;
@@ -3239,7 +3248,7 @@ if (sendSmtpTestButton) {
       logActivity("No sheet/file parsed. Sending test with plain subject/body only.", "warn");
     }
 
-    console.log("[SMTP Test UI] Button clicked. Initiating request details:", {
+    console.log("[SMTP Test UI] Initiating request details:", {
       smtpProviderValue,
       recipientColumn,
       subjectTemplateLength: subjectTemplate.length,
