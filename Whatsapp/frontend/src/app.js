@@ -3239,6 +3239,17 @@ if (sendSmtpTestButton) {
       logActivity("No sheet/file parsed. Sending test with plain subject/body only.", "warn");
     }
 
+    console.log("[SMTP Test UI] Button clicked. Initiating request details:", {
+      smtpProviderValue,
+      recipientColumn,
+      subjectTemplateLength: subjectTemplate.length,
+      bodyTemplateLength: bodyTemplate.length,
+      bodyFormat,
+      mailFrom,
+      replyTo,
+      testRow
+    });
+
     sendSmtpTestButton.disabled = true;
     setStatus("SMTP test", "sending");
     logActivity("Sending SMTP test email...");
@@ -3251,7 +3262,9 @@ if (sendSmtpTestButton) {
     renderSmtpLiveSummary();
 
     try {
-      const response = await fetch("/api/send-smtp-test", {
+      const targetUrl = "/api/send-smtp-test";
+      console.log(`[SMTP Test UI] Dispatching fetch to ${targetUrl} (resolved: ${window.__API_BASE_URL__ ? window.__API_BASE_URL__ + targetUrl : targetUrl})`);
+      const response = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3266,7 +3279,10 @@ if (sendSmtpTestButton) {
         }),
       });
 
+      console.log("[SMTP Test UI] Fetch response status:", response.status, response.statusText);
       const data = await response.json();
+      console.log("[SMTP Test UI] Fetch response body payload:", data);
+
       if (!response.ok) {
         throw new Error(data.error || "SMTP test send failed.");
       }
@@ -3275,6 +3291,7 @@ if (sendSmtpTestButton) {
       logActivity(`SMTP test sent to ${data.testRecipient}.`);
       await fetchSmtpLiveSummary({ quiet: true });
     } catch (error) {
+      console.error("[SMTP Test UI] Send test email error caught:", error);
       setStatus("SMTP test failed", "error");
       logActivity(error.message, "error");
       smtpLiveSummary = {

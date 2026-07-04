@@ -457,6 +457,7 @@ async function handleApi(req, res) {
 
   if (req.method === "POST" && req.url === "/api/send-smtp-test") {
     try {
+      console.log("[SMTP Test] Request received for /api/send-smtp-test");
       const rawBody = await readRequestBody(req);
       const payload = rawBody ? JSON.parse(rawBody) : {};
       const smtpProvider = resolveSmtpProvider(payload.smtpProvider);
@@ -471,7 +472,20 @@ async function handleApi(req, res) {
         String(payload.testRecipient || process.env.SMTP_TEST_RECIPIENT || "").trim(),
       );
 
+      console.log("[SMTP Test] Resolved payload parameters:", {
+        smtpProvider,
+        recipientColumn,
+        subjectTemplateLength: subjectTemplate.length,
+        bodyTemplateLength: bodyTemplate.length,
+        bodyFormat,
+        requestedFrom,
+        requestedReplyTo,
+        testRecipient,
+        envSmtpTestRecipient: process.env.SMTP_TEST_RECIPIENT
+      });
+
       if (!subjectTemplate || !bodyTemplate) {
+        console.warn("[SMTP Test] Failed: Subject template or body template missing");
         sendJson(res, 400, {
           error: "Subject template and body template are required.",
         });
@@ -484,14 +498,17 @@ async function handleApi(req, res) {
       });
 
       if (!isValidEmail(testRecipient)) {
+        console.warn(`[SMTP Test] Failed: testRecipient (${testRecipient}) is not a valid email`);
         sendJson(res, 400, {
           error: "Set SMTP_TEST_RECIPIENT with a valid email in .env.",
         });
         return true;
       }
 
+      console.log("[SMTP Test] Initializing SMTP transporter...");
       const { transporter, fromAddress, replyToAddress: defaultReplyToAddress } = createSmtpTransporter(smtpProvider);
       if (!fromAddress) {
+        console.error(`[SMTP Test] Failed: SMTP sender (fromAddress) is missing for active ${smtpProvider} profile.`);
         sendJson(res, 400, { error: `SMTP sender is required for active ${smtpProvider} profile.` });
         return true;
       }
@@ -499,6 +516,15 @@ async function handleApi(req, res) {
       const fromHeader = buildSmtpFromHeader(finalFrom, getSmtpConfig(smtpProvider).fromName || "");
       const finalReplyTo = resolveSmtpReplyToAddress(requestedReplyTo, defaultReplyToAddress);
       const appBaseUrl = getAppBaseUrl(req);
+
+      console.log("[SMTP Test] SMTP Config details resolved:", {
+        fromAddress,
+        defaultReplyToAddress,
+        finalFrom,
+        fromHeader,
+        finalReplyTo,
+        appBaseUrl
+      });
 
       const sampleRecipient = recipientColumn ? normalizeEmail(getCell(row, recipientColumn)) : "";
       const mergedRow = buildEmailTemplateContext(
@@ -517,6 +543,7 @@ async function handleApi(req, res) {
         baseUrl: appBaseUrl,
       });
 
+      console.log("[SMTP Test] Attempting to send mail via nodemailer...");
       const info = await withTimeout(
         transporter.sendMail({
           from: fromHeader,
@@ -531,6 +558,8 @@ async function handleApi(req, res) {
         "SMTP send timeout",
       );
 
+      console.log("[SMTP Test] Mail sent successfully. Message ID:", info?.messageId);
+
       sendJson(res, 200, {
         ok: true,
         testRecipient,
@@ -543,6 +572,7 @@ async function handleApi(req, res) {
         lastTestAt: new Date().toISOString(),
       });
     } catch (error) {
+      console.error("[SMTP Test] Error caught during test email flow:", error);
       updateSmtpTestState({
         inProgress: false,
         lastMessage: error.message || "Test email failed",
