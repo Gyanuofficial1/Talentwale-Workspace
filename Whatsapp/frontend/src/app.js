@@ -549,10 +549,10 @@ function clearActivityLog() {
 }
 
 function switchView(viewName) {
-  activeView = ["quick", "bulk", "smtp", "analytics", "config", "chat"].includes(viewName) ? viewName : "quick";
+  activeView = ["quick", "bulk", "smtp", "analytics", "chat"].includes(viewName) ? viewName : "quick";
   const isDashboard = ["quick", "bulk", "smtp"].includes(activeView);
   const isAnalytics = activeView === "analytics";
-  const isConfig = activeView === "config";
+  const isConfig = false;
   const isChat = activeView === "chat";
   const isQuick = activeView === "quick";
   const isBulk = activeView === "bulk";
