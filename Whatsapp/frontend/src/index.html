@@ -67,6 +67,10 @@
             <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
             <span>Chat Inbox</span>
           </button>
+          <button type="button" class="nav-item view-tab" data-view="alert-analysis">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span>Alert Analysis</span>
+          </button>
         </nav>
         <div class="sidebar-footer">
           <div class="status-indicator">
@@ -723,6 +727,88 @@
                     <input id="replyFileInput" type="file" hidden accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
                   </form>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="alertAnalysisView" class="app-view">
+            <div class="card mb-4">
+              <div class="card-header">
+                <h2>Job Posted Alert Analysis</h2>
+                <p>Fetch details and status of WhatsApp and Email alerts for a specific Job ID</p>
+              </div>
+              <div class="card-body">
+                <form id="alertAnalysisForm" class="form">
+                  <div class="form-row">
+                    <div class="form-group flex-2">
+                      <label for="alertReportToken">Report Token</label>
+                      <input type="text" id="alertReportToken" class="input" placeholder="Bearer Token (e.g. 98476|TwLUgsUtYENI28NO3ypNyUBjcP73PpuH3JcSfcYD7c645bb2)" required />
+                    </div>
+                    <div class="form-group flex-1">
+                      <label for="alertJobId">Job ID</label>
+                      <input type="number" id="alertJobId" class="input" placeholder="e.g. 446" required />
+                    </div>
+                    <div class="form-group flex-1">
+                      <label for="alertPageSelection">Page Selection</label>
+                      <select id="alertPageSelection" class="input">
+                        <option value="all" selected>All Pages (Auto Merge)</option>
+                        <option value="1">Page 1</option>
+                        <option value="2">Page 2</option>
+                        <option value="3">Page 3</option>
+                        <option value="4">Page 4</option>
+                        <option value="5">Page 5</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-actions mt-4 pt-3 border-top" style="display: flex; gap: 1rem; align-items: center;">
+                    <button type="submit" id="alertFetchBtn" class="btn-primary">Fetch & Analyze</button>
+                    <button type="button" id="alertExportBtn" class="btn-outline" disabled>Export to Excel</button>
+                    <span id="alertFetchStatus" class="text-sm text-tertiary ml-auto" style="font-weight: 500;"></span>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Stats Row (Hidden by default, shown on successful load) -->
+            <div class="stats-row mt-4 mb-4" id="alertStatsRow" style="display: none;">
+              <div class="stat-card">
+                <span class="stat-label">Total Candidates</span>
+                <span class="stat-value" id="alertStatTotal">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">WhatsApp Alerts</span>
+                <span class="stat-value text-success" id="alertStatWhatsapp">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Email Alerts</span>
+                <span class="stat-value text-primary" id="alertStatEmail">0</span>
+              </div>
+            </div>
+
+            <!-- Data Table Card (Hidden by default) -->
+            <div class="card mt-4" id="alertTableCard" style="display: none;">
+              <div class="card-header py-2 flex-between">
+                <h3 class="text-sm">Analysis Results Preview</h3>
+              </div>
+              <div class="card-body p-0 overflow-auto" style="max-height: 480px;">
+                <table class="report-table">
+                  <thead style="position: sticky; top: 0; background: #fafafa; z-index: 10;">
+                    <tr>
+                      <th>Candidate Name</th>
+                      <th>Phone</th>
+                      <th>Email</th>
+                      <th>Departments</th>
+                      <th>Locations</th>
+                      <th>Alert Mode</th>
+                      <th>Status</th>
+                      <th>Sent At</th>
+                      <th>Opened At</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alertAnalysisTableBody">
+                    <!-- Dynamic rows here -->
+                  </tbody>
+                </table>
               </div>
             </div>
           </section>

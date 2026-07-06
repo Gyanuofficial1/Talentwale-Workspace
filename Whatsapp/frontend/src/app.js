@@ -171,6 +171,20 @@ const dashboardView = document.querySelector("#dashboardView");
 const analyticsView = document.querySelector("#analyticsView");
 const configView = document.querySelector("#configView");
 const chatView = document.querySelector("#chatView");
+const alertAnalysisView = document.querySelector("#alertAnalysisView");
+const alertAnalysisForm = document.querySelector("#alertAnalysisForm");
+const alertReportToken = document.querySelector("#alertReportToken");
+const alertJobId = document.querySelector("#alertJobId");
+const alertPageSelection = document.querySelector("#alertPageSelection");
+const alertFetchBtn = document.querySelector("#alertFetchBtn");
+const alertExportBtn = document.querySelector("#alertExportBtn");
+const alertFetchStatus = document.querySelector("#alertFetchStatus");
+const alertStatsRow = document.querySelector("#alertStatsRow");
+const alertStatTotal = document.querySelector("#alertStatTotal");
+const alertStatWhatsapp = document.querySelector("#alertStatWhatsapp");
+const alertStatEmail = document.querySelector("#alertStatEmail");
+const alertTableCard = document.querySelector("#alertTableCard");
+const alertAnalysisTableBody = document.querySelector("#alertAnalysisTableBody");
 const pageTitle = document.querySelector("#pageTitle");
 const quickSendCard = document.querySelector("#quickSendCard");
 const bulkSendCard = document.querySelector("#bulkSendCard");
@@ -248,6 +262,7 @@ let contactRows = [];
 let contactColumns = [];
 let selectedConversationId = "";
 let selectedParticipant = "";
+let fetchedAlertData = [];
 let inboxPollTimer = null;
 let inboxEventSource = null;
 let inboxReconnectTimer = null;
@@ -549,11 +564,12 @@ function clearActivityLog() {
 }
 
 function switchView(viewName) {
-  activeView = ["quick", "bulk", "smtp", "analytics", "chat"].includes(viewName) ? viewName : "quick";
+  activeView = ["quick", "bulk", "smtp", "analytics", "chat", "alert-analysis"].includes(viewName) ? viewName : "quick";
   const isDashboard = ["quick", "bulk", "smtp"].includes(activeView);
   const isAnalytics = activeView === "analytics";
   const isConfig = false;
   const isChat = activeView === "chat";
+  const isAlertAnalysis = activeView === "alert-analysis";
   const isQuick = activeView === "quick";
   const isBulk = activeView === "bulk";
   const isSmtp = activeView === "smtp";
@@ -566,6 +582,9 @@ function switchView(viewName) {
     configView.classList.toggle("active", isConfig);
   }
   chatView.classList.toggle("active", isChat);
+  if (alertAnalysisView) {
+    alertAnalysisView.classList.toggle("active", isAlertAnalysis);
+  }
   dashboardView.classList.toggle("workflow-quick", isQuick);
   dashboardView.classList.toggle("workflow-bulk", isBulk);
   dashboardView.classList.toggle("workflow-smtp", isSmtp);
@@ -586,11 +605,13 @@ function switchView(viewName) {
         ? "Config Center"
         : isAnalytics
           ? "Email Engagement Analytics"
-          : isBulk
-            ? "Bulk Send"
-            : isSmtp
-              ? "Email Campaign"
-              : "Quick Send";
+          : isAlertAnalysis
+            ? "Job Posted Alert Analysis"
+            : isBulk
+              ? "Bulk Send"
+              : isSmtp
+                ? "Email Campaign"
+                : "Quick Send";
   }
 
   viewTabs.forEach((tab) => {
@@ -3762,6 +3783,233 @@ if (downloadReportButton) {
     }
 
     window.location.href = "/api/reports/export";
+  });
+}
+
+// ─── Job Posted Alert Analysis ───────────────────────────────────────────────
+
+if (alertAnalysisForm) {
+  alertAnalysisForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const token = alertReportToken.value.trim();
+    const jobId = alertJobId.value.trim();
+    const pageSelection = alertPageSelection.value;
+    
+    if (!token || !jobId) {
+      alertFetchStatus.textContent = "Please fill in all fields.";
+      alertFetchStatus.className = "text-sm text-danger ml-auto";
+      return;
+    }
+    
+    alertFetchBtn.disabled = true;
+    alertExportBtn.disabled = true;
+    alertFetchStatus.textContent = "Preparing fetch...";
+    alertFetchStatus.className = "text-sm text-primary ml-auto";
+    alertStatsRow.style.display = "none";
+    alertTableCard.style.display = "none";
+    alertAnalysisTableBody.innerHTML = "";
+    
+    fetchedAlertData = [];
+    
+    try {
+      if (pageSelection === "all") {
+        // Fetch first page to find last_page
+        alertFetchStatus.textContent = "Fetching page 1...";
+        const firstPageData = await fetchAlertAnalysisPage(token, jobId, 1);
+        
+        if (firstPageData && firstPageData.data) {
+          fetchedAlertData = fetchedAlertData.concat(firstPageData.data);
+          const lastPage = Number(firstPageData.last_page || 1);
+          
+          alertFetchStatus.textContent = `Page 1 fetched. Total pages: ${lastPage}.`;
+          
+          for (let p = 2; p <= lastPage; p++) {
+            alertFetchStatus.textContent = `Fetching page ${p} of ${lastPage}...`;
+            const pageData = await fetchAlertAnalysisPage(token, jobId, p);
+            if (pageData && pageData.data) {
+              fetchedAlertData = fetchedAlertData.concat(pageData.data);
+            }
+          }
+        }
+      } else {
+        const pageNum = parseInt(pageSelection, 10);
+        alertFetchStatus.textContent = `Fetching page ${pageNum}...`;
+        const pageData = await fetchAlertAnalysisPage(token, jobId, pageNum);
+        if (pageData && pageData.data) {
+          fetchedAlertData = pageData.data;
+        }
+      }
+      
+      if (!fetchedAlertData.length) {
+        throw new Error("No data returned from the API.");
+      }
+      
+      alertFetchStatus.textContent = `Successfully fetched ${fetchedAlertData.length} records.`;
+      alertFetchStatus.className = "text-sm text-success ml-auto";
+      
+      // Update UI and stats
+      renderAlertAnalysisResults();
+      alertExportBtn.disabled = false;
+      
+    } catch (err) {
+      console.error(err);
+      alertFetchStatus.textContent = `Error: ${err.message}`;
+      alertFetchStatus.className = "text-sm text-danger ml-auto";
+    } finally {
+      alertFetchBtn.disabled = false;
+    }
+  });
+}
+
+async function fetchAlertAnalysisPage(token, jobId, page) {
+  const url = 'https://production.talentwale.com/api/admin/reports/job-posted-alert-analysis';
+  const formattedToken = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'accept': '*/*',
+      'authorization': formattedToken,
+      'content-type': 'application/json',
+      'origin': 'https://talentwale-report.netlify.app',
+      'referer': 'https://talentwale-report.netlify.app/'
+    },
+    body: JSON.stringify({
+      job_id: parseInt(jobId, 10),
+      current_page: page
+    })
+  });
+  
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || `API error (${response.status})`);
+  }
+  return data;
+}
+
+function renderAlertAnalysisResults() {
+  let totalCandidates = fetchedAlertData.length;
+  let whatsappAlertsCount = 0;
+  let emailAlertsCount = 0;
+  
+  alertAnalysisTableBody.innerHTML = fetchedAlertData.map(candidate => {
+    // Process alerts info
+    const alerts = Array.isArray(candidate.alerts) ? candidate.alerts : [];
+    
+    // Count alerts
+    alerts.forEach(a => {
+      const mode = String(a.alert_mode || "").toLowerCase();
+      if (mode === "whatsapp") whatsappAlertsCount++;
+      else if (mode === "mail" || mode === "email") emailAlertsCount++;
+    });
+    
+    const alertModes = alerts.map(a => a.alert_mode || "-").join(", ") || "none";
+    const alertStatuses = alerts.map(a => a.status || "-").join(", ") || "-";
+    const alertSentTimes = alerts.map(a => a.sent_at || "-").join(", ") || "-";
+    const alertOpenedTimes = alerts.map(a => a.opened_at || "-").join(", ") || "-";
+    
+    const depts = Array.isArray(candidate.preferred_departments) ? candidate.preferred_departments.join(", ") : "-";
+    const locs = Array.isArray(candidate.preferred_locations) ? candidate.preferred_locations.join(", ") : "-";
+    
+    return `
+      <tr>
+        <td style="font-weight: 500; color: var(--text-primary);">${escapeHtml(candidate.name || "-")}</td>
+        <td>${escapeHtml(candidate.phone || "-")}</td>
+        <td>${escapeHtml(candidate.email || "-")}</td>
+        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(depts)}">${escapeHtml(depts)}</td>
+        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(locs)}">${escapeHtml(locs)}</td>
+        <td><span style="font-weight: 500;">${escapeHtml(alertModes)}</span></td>
+        <td><span class="report-status ${alerts.some(a => a.status === 'sent') ? 'success' : 'neutral'}">${escapeHtml(alertStatuses)}</span></td>
+        <td>${escapeHtml(alertSentTimes)}</td>
+        <td>${escapeHtml(alertOpenedTimes)}</td>
+      </tr>
+    `;
+  }).join("");
+  
+  // Update stats cards
+  alertStatTotal.textContent = String(totalCandidates);
+  alertStatWhatsapp.textContent = String(whatsappAlertsCount);
+  alertStatEmail.textContent = String(emailAlertsCount);
+  
+  alertStatsRow.style.display = "grid";
+  alertTableCard.style.display = "block";
+}
+
+if (alertExportBtn) {
+  alertExportBtn.addEventListener("click", () => {
+    if (!fetchedAlertData || !fetchedAlertData.length) {
+      alertFetchStatus.textContent = "No data to export.";
+      alertFetchStatus.className = "text-sm text-danger ml-auto";
+      return;
+    }
+    
+    try {
+      const excelRows = [];
+      
+      fetchedAlertData.forEach(c => {
+        const baseCandidate = {
+          "Candidate Name": c.name || "",
+          "Phone": c.phone || "",
+          "Email": c.email || "",
+          "Preferred Departments": Array.isArray(c.preferred_departments) ? c.preferred_departments.join(", ") : "",
+          "Preferred Job Titles": Array.isArray(c.preferred_job_titles) ? c.preferred_job_titles.join(", ") : "",
+          "Preferred Industries": Array.isArray(c.preferred_industries) ? c.preferred_industries.join(", ") : "",
+          "Preferred Sub Industries": Array.isArray(c.preferred_sub_industries) ? c.preferred_sub_industries.join(", ") : "",
+          "Preferred Locations": Array.isArray(c.preferred_locations) ? c.preferred_locations.join(", ") : ""
+        };
+        
+        const alerts = Array.isArray(c.alerts) ? c.alerts : [];
+        
+        if (alerts.length > 0) {
+          alerts.forEach(a => {
+            excelRows.push({
+              ...baseCandidate,
+              "Alert Mode": a.alert_mode || "",
+              "Alert Status": a.status || "",
+              "Sent At": a.sent_at || "",
+              "Opened At": a.opened_at || ""
+            });
+          });
+        } else {
+          excelRows.push({
+            ...baseCandidate,
+            "Alert Mode": "",
+            "Alert Status": "",
+            "Sent At": "",
+            "Opened At": ""
+          });
+        }
+      });
+      
+      const jobId = alertJobId.value.trim();
+      const pageSelection = alertPageSelection.value;
+      const worksheet = XLSX.utils.json_to_sheet(excelRows);
+      const workbook = XLSX.utils.book_new();
+      
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Alert Analysis");
+      
+      // Auto-fit column widths
+      const maxLens = {};
+      excelRows.forEach(row => {
+        Object.keys(row).forEach(key => {
+          const val = String(row[key] || "");
+          maxLens[key] = Math.max(maxLens[key] || key.length, val.length);
+        });
+      });
+      worksheet['!cols'] = Object.keys(maxLens).map(key => ({
+        wch: Math.min(maxLens[key] + 2, 45) // cap column width at 45 characters
+      }));
+      
+      XLSX.writeFile(workbook, `job_posted_alert_analysis_job_${jobId}_page_${pageSelection}.xlsx`);
+      
+      alertFetchStatus.textContent = "Excel file downloaded successfully.";
+      alertFetchStatus.className = "text-sm text-success ml-auto";
+    } catch (err) {
+      console.error(err);
+      alertFetchStatus.textContent = `Export failed: ${err.message}`;
+      alertFetchStatus.className = "text-sm text-danger ml-auto";
+    }
   });
 }
 
