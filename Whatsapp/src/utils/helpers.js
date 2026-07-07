@@ -169,8 +169,9 @@ function escapeHtmlForEmail(value) {
 }
 
 function interpolateTemplate(template, rowData = {}) {
-  return String(template || "").replace(/\{\{(\w+)\}\}/g, (_, key) => {
-    const value = rowData[key];
+  return String(template || "").replace(/\{\{([\w\s]+)\}\}/g, (_, key) => {
+    const trimmedKey = key.trim();
+    const value = rowData[trimmedKey];
     return value !== undefined && value !== null ? String(value) : "";
   });
 }
@@ -181,7 +182,24 @@ function sanitizeRowObject(row) {
   }
   const sanitized = {};
   for (const [key, value] of Object.entries(row)) {
-    sanitized[key] = value !== undefined && value !== null ? String(value) : "";
+    const valStr = value !== undefined && value !== null ? String(value) : "";
+    sanitized[key] = valStr;
+
+    // Normalize keys with spaces to underscore representations for template parsing compatibility
+    const normalizedKey = key.replace(/\s+/g, "_");
+    if (normalizedKey !== key) {
+      sanitized[normalizedKey] = valStr;
+    }
+
+    const lowerKey = normalizedKey.toLowerCase();
+    if (lowerKey !== key && lowerKey !== normalizedKey) {
+      sanitized[lowerKey] = valStr;
+    }
+
+    const cleanLower = key.toLowerCase();
+    if (cleanLower !== key && cleanLower !== lowerKey) {
+      sanitized[cleanLower] = valStr;
+    }
   }
   return sanitized;
 }

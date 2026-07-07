@@ -217,42 +217,61 @@ async function enqueueEmailCampaignTasks(campaignId, campaignPayload, rows, reci
   const baseUrl = String(campaignPayload.baseUrl || "").trim();
   const sanitizedRows = rows.map((row) => sanitizeRowObject(row));
 
-  const taskPayloads = [];
-  for (let rowIndex = 0; rowIndex < sanitizedRows.length; rowIndex += 1) {
-    const rowData = sanitizedRows[rowIndex];
-    const recipient = normalizeEmail(getCell(rowData, recipientColumn));
-    taskPayloads.push({
-      type: "smtp_email_task",
-      campaignId: String(campaignId || ""),
-      rowIndex,
-      recipient,
-      rowData,
-      subjectTemplate,
-      bodyTemplate,
-      bodyFormat,
-      smtpProvider,
-      sendRatePerMinute,
-      mailFrom,
-      replyTo,
-      baseUrl,
-      enqueuedAt: new Date().toISOString(),
-    });
+  const sqsConfig = getSqsEmailQueueConfig();
+  if (sqsConfig.enabled) {
+    const taskPayloads = [];
+    for (let rowIndex = 0; rowIndex < sanitizedRows.length; rowIndex += 1) {
+      const rowData = sanitizedRows[rowIndex];
+      const recipient = normalizeEmail(getCell(rowData, recipientColumn));
+      taskPayloads.push({
+        type: "smtp_email_task",
+        campaignId: String(campaignId || ""),
+        rowIndex,
+        recipient,
+        rowData,
+        subjectTemplate,
+        bodyTemplate,
+        bodyFormat,
+        smtpProvider,
+        sendRatePerMinute,
+        mailFrom,
+        replyTo,
+        baseUrl,
+        enqueuedAt: new Date().toISOString(),
+      });
+    }
+
+    await batchEnqueueEmailTaskMessagesSqs(taskPayloads);
+
+    await dbPool.query(
+      `
+        UPDATE campaigns
+        SET status = 'running',
+            started_at = COALESCE(started_at, NOW()),
+            updated_at = NOW(),
+            last_message = 'Queued in AWS SQS'
+
+        WHERE id = $1
+      `,
+      [campaignId],
+    );
+  } else {
+    await dbPool.query(
+      `
+        UPDATE campaigns
+        SET status = 'running',
+            started_at = COALESCE(started_at, NOW()),
+            updated_at = NOW(),
+            last_message = 'Queued in Database'
+
+        WHERE id = $1
+      `,
+      [campaignId],
+    );
+
+    // Start database-backed queue processor in the background
+    void processCampaignQueue(CAMPAIGN_CHANNEL_EMAIL);
   }
-
-  await batchEnqueueEmailTaskMessagesSqs(taskPayloads);
-
-  await dbPool.query(
-    `
-      UPDATE campaigns
-      SET status = 'running',
-          started_at = COALESCE(started_at, NOW()),
-          updated_at = NOW(),
-          last_message = 'Queued in AWS SQS'
-
-      WHERE id = $1
-    `,
-    [campaignId],
-  );
 
   const campaign = await getCampaignById(campaignId);
   broadcastCampaignSummaryEvent(campaign);

@@ -621,10 +621,11 @@ async function handleApi(req, res) {
       await enqueueEmailCampaignTasks(campaignId, campaignPayload, rows, recipientColumn);
 
       const campaign = await getCampaignById(campaignId);
+      const sqsConfig = getSqsEmailQueueConfig();
       sendJson(res, 202, {
         ok: true,
         campaignId,
-        dispatchMode: "aws_sqs_queue_tasks",
+        dispatchMode: sqsConfig.enabled ? "aws_sqs_queue_tasks" : "database_queue_tasks",
         summary: buildCampaignSummary(campaign),
         tracking: {
           baseUrl: trackingBaseUrl,
