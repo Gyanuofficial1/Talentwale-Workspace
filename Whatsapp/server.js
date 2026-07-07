@@ -87,6 +87,10 @@ async function lambdaInit() {
   await database.initDatabase();
   await global.initSqsEmailQueue();
   await global.resetProcessingRecipientsOnStartup();
+
+  // Auto-resume database queue processing on startup
+  void global.processCampaignQueue("email");
+  void global.processCampaignQueue("whatsapp");
 }
 
 // 8. Start Local Server if not in Lambda
