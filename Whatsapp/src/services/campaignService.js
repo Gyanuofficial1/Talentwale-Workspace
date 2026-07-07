@@ -19,6 +19,8 @@ const net = require("net");
 const dns = require("dns").promises;
 const crypto = require("crypto");
 
+const campaignWorkers = new Map();
+
 
 async function processWhatsappRecipient(campaign, recipientRow, attemptIndex) {
   const payload = campaign.payload_json && typeof campaign.payload_json === "object" ? campaign.payload_json : {};
