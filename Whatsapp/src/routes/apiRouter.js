@@ -195,65 +195,78 @@ async function handleApi(req, res) {
     return true;
   }
 
-  if (req.method === "GET" && routePath === UNSUBSCRIBE_ROUTE_PATH) {
+  if ((req.method === "GET" || req.method === "POST") && routePath === UNSUBSCRIBE_ROUTE_PATH) {
     const parsedUrl = new URL(req.url, "http://localhost");
     const token = String(parsedUrl.searchParams.get("token") || "").trim();
 
     try {
       if (!token) throw new Error("Missing token.");
       const payload = cryptoUtils.parseUnsubscribeToken(token);
+      
+      const isPost = req.method === "POST";
+      const source = isPost ? "one_click_header" : "footer_link";
+
       await markRecipientUnsubscribed(payload.email, {
         campaignId: payload.campaignId,
         tokenHash: payload.tokenHash,
-        source: "footer_link"
+        source: source
       });
-      res.writeHead(200, {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, no-cache, must-revalidate, private, max-age=0"
-      });
-      res.end(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Unsubscribed</title>
-          <style>
-            body { font-family: system-ui, sans-serif; text-align: center; padding: 50px; background: #f3f4f6; color: #1f2937; }
-            .box { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-            h2 { color: #16a34a; }
-          </style>
-        </head>
-        <body>
-          <div class="box">
-            <h2>Successfully Unsubscribed</h2>
-            <p>You have been removed from our mailing list and will no longer receive these emails.</p>
-          </div>
-        </body>
-        </html>
-      `);
+
+      if (isPost) {
+        sendJson(res, 200, { ok: true, message: "Successfully unsubscribed via header" });
+      } else {
+        res.writeHead(200, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store, no-cache, must-revalidate, private, max-age=0"
+        });
+        res.end(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Unsubscribed</title>
+            <style>
+              body { font-family: system-ui, sans-serif; text-align: center; padding: 50px; background: #f3f4f6; color: #1f2937; }
+              .box { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+              h2 { color: #16a34a; }
+            </style>
+          </head>
+          <body>
+            <div class="box">
+              <h2>Successfully Unsubscribed</h2>
+              <p>You have been removed from our mailing list and will no longer receive these emails.</p>
+            </div>
+          </body>
+          </html>
+        `);
+      }
     } catch (error) {
-      res.writeHead(400, {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, no-cache, must-revalidate, private, max-age=0"
-      });
-      res.end(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Unsubscribe Error</title>
-          <style>
-            body { font-family: system-ui, sans-serif; text-align: center; padding: 50px; background: #f3f4f6; color: #1f2937; }
-            .box { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-            h2 { color: #dc2626; }
-          </style>
-        </head>
-        <body>
-          <div class="box">
-            <h2>Error</h2>
-            <p>${error.message || "Invalid or expired unsubscribe link."}</p>
-          </div>
-        </body>
-        </html>
-      `);
+      if (req.method === "POST") {
+        sendJson(res, 400, { error: error.message || "Invalid or expired unsubscribe link." });
+      } else {
+        res.writeHead(400, {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-store, no-cache, must-revalidate, private, max-age=0"
+        });
+        res.end(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Unsubscribe Error</title>
+            <style>
+              body { font-family: system-ui, sans-serif; text-align: center; padding: 50px; background: #f3f4f6; color: #1f2937; }
+              .box { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+              h2 { color: #dc2626; }
+            </style>
+          </head>
+          <body>
+            <div class="box">
+              <h2>Error</h2>
+              <p>${error.message || "Invalid or expired unsubscribe link."}</p>
+            </div>
+          </body>
+          </html>
+        `);
+      }
     }
     return true;
   }
