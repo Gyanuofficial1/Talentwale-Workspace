@@ -1,0 +1,44 @@
+name: Deploy Backend to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Whatsapp/server.js'
+      - 'Whatsapp/send-whatsapp.js'
+      - 'Whatsapp/package.json'
+      - 'Whatsapp/package-lock.json'
+      - 'Whatsapp/src/**'
+      - 'Whatsapp/frontend/**'
+      - 'Whatsapp/talentwale-app-download.html'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "Whatsapp/server.js,Whatsapp/send-whatsapp.js,Whatsapp/package.json,Whatsapp/package-lock.json,Whatsapp/src/,Whatsapp/frontend/,Whatsapp/talentwale-app-download.html"
+          target: "/home/ubuntu/whatsapp"
+          strip_components: 1
+
+      - name: SSH Command to install and restart PM2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            cd /home/ubuntu/whatsapp
+            npm install --production
+            pm2 restart talentwale-backend
